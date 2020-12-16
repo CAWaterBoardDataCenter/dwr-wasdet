@@ -35,5 +35,19 @@ vignettes/*.pdf
 *.utf8.md
 *.knit.md
 
+# Mac files
+.DS_Store
+
 # R Environment Variables
 .Renviron
+
+# Project files and folders
+old
+explore
+reports
+dwr-files
+data-gaps
+gis
+output
+demands
+scratch.R

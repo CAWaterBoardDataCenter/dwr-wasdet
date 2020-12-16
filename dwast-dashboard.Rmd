@@ -1,0 +1,102 @@
+---
+title: "Drought Water Availability Screening Tool"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+
+# Load libraries.
+library(shiny)
+library(flexdashboard)
+library(dplyr)
+library(sf)
+library(leaflet)
+library(wesanderson)
+library(aws.s3)
+
+# Load datafile from S3 bucket.
+# s3load(object = "dwast-data.RData",
+#        bucket = "dwr-enf-shiny")
+
+load("./output/dwast-data-2020-11-17.RData")
+
+```  
+
+Inputs {.sidebar data-width=300}
+-----------------------------------------------------------------------
+
+```{r}
+# Select/deselect HUC-8 watersheds.
+selectInput(inputId = "huc8_selected",
+            label = "Select HUC-8 Watershed:",
+            choices = sort(unique(pods$huc8_name)),
+            selected = sample(unique(pods$huc8_name), 1),
+            multiple = FALSE)
+```  
+
+Column {data-width=150 .tabset}
+-----------------------------------------------------------------------
+
+### Watershed Map
+
+```{r}
+
+# Create POD point color palette by wr_type.
+pal1 <- c(wes_palette("Darjeeling1"), wes_palette("Darjeeling2"))[1:9]
+wr_type_pal <- colorFactor(palette = pal1, 
+                           domain = pods$wr_type, reverse = F)
+
+# Filter pods for points in selected HUC-8 watershed.
+plot_pods <- reactive({
+  filter(pods, huc8_name %in% input$huc8_selected)
+})
+
+# Filter huc8_layer for selected watershed polygon.
+plot_huc8_poly <- reactive({
+  filter(huc8_layer, huc8_name %in% input$huc8_selected)
+})
+
+# Render the map.
+renderLeaflet({
+  
+  # Don't show map if no PODs to plot.
+  validate(
+    need(nrow(plot_pods()) > 0, 
+         paste0("No Data Available.\n",
+                "Please select other Watershed."))
+  )
+  
+  leaflet(plot_pods()) %>%
+    addProviderTiles(providers$CartoDB.Positron) %>%
+    addCircleMarkers(radius = 4,
+                     stroke =TRUE,
+                     color = ~wr_type_pal(plot_pods()$wr_type),
+                     weight = 2,
+                     fill = ~wr_type_pal(plot_pods()$wr_type),
+                     fillOpacity = 0.2 ,
+                     popup = ~paste(wr_id, "<br>",
+                                    owner, "<br>",
+                                    wr_type)
+    ) %>%
+    addLegend(
+      position = "bottomleft",
+      pal = wr_type_pal,
+      values = ~wr_type,
+      title = "Water Right Type",
+      opacity = 1
+    ) %>% 
+    addPolygons(data = plot_huc8_poly(),
+                weight = 2,
+                col = "blue",
+                fill = FALSE)
+})
+
+```
+
+### Water Right Info
+
+### Statewide Watershed Map

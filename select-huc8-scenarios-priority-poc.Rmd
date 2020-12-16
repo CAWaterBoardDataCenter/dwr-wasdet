@@ -1,0 +1,154 @@
+---
+title: "Select HUC-8 -> Scenario(s) -> Priority Prototype"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+
+# Load libraries.
+library(shiny)
+library(flexdashboard)
+library(dplyr)
+library(wesanderson)
+library(ggplot2)
+
+load("./output/dwast-wrinfo-2020-12-15.RData")
+load("./output/dwast-demands-2020-12-15.RData")
+
+# Create color palette for demand bins.
+demand_order <- ordered(c("Junior Post-14",
+                          "Post-14",
+                          "Statement Demand",
+                          "Environmental Demand"))
+demand_pal <- wes_palettes$GrandBudapest1[c(2, 1, 4, 3)]
+names(demand_pal) <- demand_order
+
+```
+
+## Inputs {.sidebar data-width="300"}
+
+```{r}
+
+# Choose how to visualize demand. By priority allows you to see supply data.
+# Select watershed to view. <- TO DEVELOP
+# radioButtons(inputId = "demand_display_selected",
+#             label = "Select How To Display Demand:",
+#             choices = c("By Priority\n(Includes Supply Forecast Where Available)" = "by_priority",
+#                         "By Water Right Type" = "by_type"))
+
+## Select HUC-8 watershed. ----
+selectInput(inputId = "huc8_selected",
+            label = "Select HUC-8 Watershed:",
+            choices = sort(names(demand)),
+            selected = "San Pablo Bay", # sample(unique(demand_test$huc8_name), 1),
+            multiple = FALSE)
+
+# Grab demand and wr_info for selected HUC-8.
+ws_demand <- reactive({
+  req(input$huc8_selected)
+  demand[[input$huc8_selected]]
+})
+ws_wr_info <- reactive({
+  req(input$huc8_selected)
+  filter(wr_info, huc8_name %in% input$huc8_selected)
+})
+
+## Select Demand Scenario(s). ----
+selectInput(inputId = "scenario_selected",
+           label = "Select Demand Scenario:",
+           choices = NULL,
+           selected = NULL,
+           multiple = FALSE)
+ observeEvent(input$huc8_selected, {
+              choices <- sort(na.omit(unique(ws_demand()$scenario)))
+              updateSelectInput(session, "scenario_selected",
+                                choices = choices,
+                                selected = "Reported Diversions - 2011")
+              })
+scenario_demand <- reactive({
+   req(input$scenario_selected)
+   filter(ws_demand(), scenario %in% input$scenario_selected)
+ })
+scenario_wr_info <- reactive({
+   req(input$scenario_selected)
+   filter(ws_wr_info(), scenario %in% input$scenario_selected)
+ })
+
+## Select priority year to slice. ----
+selectInput(inputId = "priority_selected",
+           label = "Select Priority Year:",
+           choices = NULL,
+           selected = NULL,
+             multiple = FALSE)
+observeEvent(input$scenario_selected, {
+            choices <- sort(na.omit(unique(scenario_demand()$p_year)), decreasing = TRUE)
+            updateSelectInput(session, "priority_selected",
+                              choices = choices,
+                              selected = max(scenario_demand()$p_year, na.rm = TRUE))
+})
+
+
+```
+
+## Column {.tabset data-width="150"}
+
+
+### Plot
+```{r}
+# Re-code fill_color based on selected priority.
+plot_demand <- reactive({
+  scenario_demand() %>% 
+#    req(input$priority_selected)
+    #   filter(huc8_name %in% input$huc8_selected) %>% 
+    mutate(fill_color = if_else(priority == "Statement Demand",
+                                "Statement Demand",
+                                if_else(priority == "Statement Demand",
+                                        "Statement Demand",
+                                        if_else(p_year >= input$priority_selected,
+                                                "Junior Post-14", "Post-14"))),
+           fill_color = ordered(fill_color, levels = demand_order)) %>% 
+    group_by(rept_date, fill_color) %>% 
+    summarise(demand_daily_af = sum(demand_daily_af, na.rm = TRUE),
+              demand_daily_cfs = sum(demand_daily_cfs, na.rm = TRUE),
+              .groups = "drop")
+})
+
+# Render the plot.
+renderPlot({
+  
+ ggplot(data = plot_demand(),
+           aes(x = rept_date,
+               y = demand_daily_af,
+               group = fill_color,
+               fill = fill_color)) +
+ geom_area(position = "stack") +
+ scale_fill_manual(values = demand_pal)
+
+})
+
+```
+
+
+### Scenario Plot Data
+
+```{r}
+renderDataTable(plot_demand())
+
+```
+
+
+### Scenario Demand Data
+
+```{r}
+renderDataTable(scenario_demand())
+
+```
+
+### Watershed Water Right Information
+```{r}
+renderDataTable(ws_wr_info())
+```
