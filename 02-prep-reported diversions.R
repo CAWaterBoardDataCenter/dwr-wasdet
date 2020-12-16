@@ -133,10 +133,10 @@ save_fname <- paste0("./output/dwast-demands-",
 save(demand,
      demand_create_date,
      file = save_fname)
-put_object(file = save_fname, 
-           object = "dwast-demands.RData", 
-           bucket = "dwr-enf-shiny",
-           multipart = TRUE)
+# put_object(file = save_fname, 
+#            object = "dwast-demands.RData", 
+#            bucket = "dwr-enf-shiny",
+#            multipart = TRUE)
 
 
 ## Filter, munge, plot. ----  
