@@ -15,17 +15,40 @@ library(flexdashboard)
 library(dplyr)
 library(wesanderson)
 library(ggplot2)
+library(aws.s3)
 
-load("./output/dwast-wrinfo-2020-12-15.RData")
-load("./output/dwast-demands-2020-12-15.RData")
+## Initialize values. ---
 
-# Create color palette for demand bins.
-demand_order <- ordered(c("Junior Post-14",
+load_from_s3 <- FALSE
+
+# Water availability demand stacking order.
+wa_demand_order <- ordered(c("Junior Post-14",
                           "Post-14",
                           "Statement Demand",
                           "Environmental Demand"))
-demand_pal <- wes_palettes$GrandBudapest1[c(2, 1, 4, 3)]
-names(demand_pal) <- demand_order
+
+## Load data files. ----
+
+if(load_from_s3) {
+  # Water Right Info.
+  s3load(object = "dwast-wrinfo.RData",
+         bucket = "dwr-enf-shiny")
+  
+  # Demand Data.
+  s3load(object = "dwast-demands.RData",
+         bucket = "dwr-enf-shiny")
+} else {
+  # Water Right Info.
+  load("./output/dwast-wrinfo-2020-12-15.RData")
+  # Demand Data.
+  load("./output/dwast-demands-2020-12-15.RData")
+}
+
+## Define color palettes. ----
+
+# Water availability demand stacking order.
+wa_demand_pal <- wes_palettes$GrandBudapest1[c(2, 1, 4, 3)]
+names(wa_demand_pal) <- wa_demand_order
 
 ```
 
@@ -85,6 +108,7 @@ selectInput(inputId = "priority_selected",
            selected = NULL,
              multiple = FALSE)
 observeEvent(input$scenario_selected, {
+  req(input$scenario_selected)
             choices <- sort(na.omit(unique(scenario_demand()$p_year)), decreasing = TRUE)
             updateSelectInput(session, "priority_selected",
                               choices = choices,
@@ -110,7 +134,7 @@ plot_demand <- reactive({
                                         "Statement Demand",
                                         if_else(p_year >= input$priority_selected,
                                                 "Junior Post-14", "Post-14"))),
-           fill_color = ordered(fill_color, levels = demand_order)) %>% 
+           fill_color = ordered(fill_color, levels = wa_demand_order)) %>% 
     group_by(rept_date, fill_color) %>% 
     summarise(demand_daily_af = sum(demand_daily_af, na.rm = TRUE),
               demand_daily_cfs = sum(demand_daily_cfs, na.rm = TRUE),
@@ -126,7 +150,7 @@ renderPlot({
                group = fill_color,
                fill = fill_color)) +
  geom_area(position = "stack") +
- scale_fill_manual(values = demand_pal)
+ scale_fill_manual(values = wa_demand_pal)
 
 })
 
