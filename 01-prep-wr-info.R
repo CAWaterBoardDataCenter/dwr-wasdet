@@ -22,9 +22,6 @@ if(!("package:stringr" %in% search())) {
 if(!("package:sf" %in% search())) {
   suppressMessages(library(sf))
 }
-# if(!("package:geojsonio" %in% search())) {
-#   suppressMessages(library(geojsonio))
-# }
 if(!("package:wesanderson" %in% search())) {
   suppressMessages(library(wesanderson))
 }
@@ -326,10 +323,11 @@ huc8_layer <- read_sf(dsn = dsn,
                          layer = layer)
 huc8_layer <- st_transform(huc8_layer,
                               crs = 4326)
+
 huc8_layer <- huc8_layer %>% 
   select(huc8_name = name,
-         shape_Leng,
-         shape_Area,
+#         shape_Leng,
+#         shape_Area,
          geometry)
 
 ## Save data files locally and to S3 bucket. ----
