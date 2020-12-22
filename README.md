@@ -69,13 +69,25 @@ Began processing geospatial data to attach to `wr_info`:
 
     -   Can select HUC8 watershed and priority level at which to highlight junior appropriative rights.
 
-Week of 12/9/20
-
--   Implementing multi
+Week of 12/7/20
 
 -   Since the dashboard is HUC-8-based, it makes more sense to organize demands by HUC-8. Rewriting `prep-reported-diversions.R` to accomplish this.
 
     -   -\> `02-prep-rep-divs-by-huc.R`
+
+Week of 12/14/20
+
+-   Finished creating reported diversion-based demand dataset
+
+-   Adding map pane to dashboard
+
+Week of 12/21/20
+
+-   Legend for map
+
+-   Fixed POD filtering (should filter on huc8 selected, not wr_ids selected)
+
+-   Add functionality to compare two demand plots in a watershed.
 
 ### To-Do List
 
