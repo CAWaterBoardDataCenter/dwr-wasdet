@@ -1,9 +1,10 @@
 ---
-title: "Water Availability SCreening Tool"
+title: "Water Availability Screening Tool"
 output: 
   flexdashboard::flex_dashboard:
     orientation: columns
     vertical_layout: fill
+    logo: www/DWR-ENF-Logo-48px.png
 runtime: shiny
 ---
 
@@ -17,6 +18,7 @@ library(leaflet)
 library(dplyr)
 library(wesanderson)
 library(ggplot2)
+library(plotly)
 library(aws.s3)
 
 ## Initialize values. ---
@@ -41,26 +43,14 @@ if(load_from_s3) {
   load("./output/dwast-demands-2020-12-15.RData")
 }
 
-## Define color palettes and order. ----
+## Define color palettes and plot order. ----
 
-# Water right types.
-# wr_type_list <- ordered(
-#   c("Appropriative",
-#     "Federal Claims",
-#     "Federal Stockponds",
-#     "Registration Domestic",
-#     "Registration Irrigation",
-#     "Registration Livestock",
-#     "Registration Cannabis",
-#     "Statement of Div and Use",
-#     "Stockpond")
-# )
+# Water right type.
 wr_type_pal <-colorFactor(c(wes_palette("Darjeeling1"), 
                             wes_palette("Darjeeling2"))[1:9],
                           pods$wr_type)
-# names(wr_type_pal) <- wr_type_list
 
-# Water availability demand stacking order.
+# Water availability demand.
 wa_demand_order <- ordered(
   c("Junior Post-14",
     "Post-14",
@@ -89,7 +79,7 @@ names(wa_demand_pal) <- wa_demand_order
 selectInput(inputId = "huc8_selected",
             label = "Select HUC-8 Watershed:",
             choices = sort(names(demand)),
-            selected = "San Pablo Bay", # sample(unique(demand_test$huc8_name), 1),
+            selected = sample(unique(names(demand)), 1),
             multiple = FALSE)
 
 # Grab demand and wr_info for selected HUC-8.
@@ -140,7 +130,7 @@ observeEvent(input$scenario_selected, {
 
 ```
 
-Column
+Column {data-width=600}
 -------------------------------------
 
 ### Plot
@@ -167,28 +157,40 @@ plot_demand <- reactive({
 # Render the plot.
 renderPlot({
   
- ggplot(data = plot_demand(),
-           aes(x = rept_date,
-               y = demand_daily_af,
-               group = fill_color,
-               fill = fill_color)) +
- geom_area(position = "stack") +
- scale_fill_manual(values = wa_demand_pal)
-
+  ggplot(data = plot_demand(),
+         aes(x = rept_date,
+             y = demand_daily_af,
+             group = fill_color,
+             fill = fill_color)) +
+    geom_area(position = "stack") +
+    scale_fill_manual(name = "Demand type:",
+                      values = wa_demand_pal,
+                      labels = c(paste(input$priority_selected, 
+                                        "& Junior Post-14 Demand"),
+                                 "Senior Post-14 Demand",
+                                 "Statement Demand")) +
+    labs(y = "Acre-Feet/Day") +
+    theme(legend.position = "bottom",
+          axis.title = element_text(size = rel(1.5)),
+          axis.text = element_text(size = rel(1.5)),
+          legend.text = element_text(size = rel(1.5)),
+          legend.title = element_text(size = rel(1.5)),
+          axis.title.x = element_blank())
+  
 },
-height = 500)
+height = 600)
 
 ```
 
-Column
+Column {data-width=400}
 -------------------------------------
 
-### Map
+### Map {data-height=500}
 
 ```{r}
 pod_points <- reactive({
   pods %>%
-    filter(wr_id %in% ws_wr_info()$wr_id)
+    filter(huc8_name %in% input$huc8_selected)
 })
 
 ws_poly <- reactive({
@@ -227,7 +229,13 @@ renderLeaflet({
 })
 ```   
  
-### Information
+### Demand Scenario Information {data-height=250}
+    
+```{r}
+```
+
+
+### Supply Scenario Information {data-height=250}
     
 ```{r}
 ```
