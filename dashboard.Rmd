@@ -18,7 +18,6 @@ library(leaflet)
 library(dplyr)
 library(wesanderson)
 library(ggplot2)
-library(plotly)
 library(aws.s3)
 
 ## Initialize values. ---
@@ -93,14 +92,15 @@ ws_wr_info <- reactive({
 })
 
 ## Select Demand Scenario(s).
-selectInput(inputId = "scenario_selected",
-           label = "Select Demand Scenario:",
+selectizeInput(inputId = "scenario_selected",
+           label = "Select Up To Two Demand Scenarios:",
            choices = NULL,
            selected = NULL,
-           multiple = FALSE)
+           multiple = TRUE,
+           options = list(maxItems = 2))
  observeEvent(input$huc8_selected, {
               choices <- sort(na.omit(unique(ws_demand()$scenario)))
-              updateSelectInput(session, "scenario_selected",
+              updateSelectizeInput(session, "scenario_selected",
                                 choices = choices,
                                 selected = "Reported Diversions - 2019")
               })
@@ -148,7 +148,7 @@ plot_demand <- reactive({
                                         if_else(p_year >= input$priority_selected,
                                                 "Junior Post-14", "Post-14"))),
            fill_color = ordered(fill_color, levels = wa_demand_order)) %>% 
-    group_by(rept_date, fill_color) %>% 
+    group_by(scenario, rept_date, fill_color) %>% 
     summarise(demand_daily_af = sum(demand_daily_af, na.rm = TRUE),
               demand_daily_cfs = sum(demand_daily_cfs, na.rm = TRUE),
               .groups = "drop")
@@ -171,14 +171,16 @@ renderPlot({
                                  "Statement Demand")) +
     labs(y = "Acre-Feet/Day") +
     theme(legend.position = "bottom",
-          # axis.title = element_text(size = rel(1.5)),
-          # axis.text = element_text(size = rel(1.5)),
-          # legend.text = element_text(size = rel(1.5)),
-          # legend.title = element_text(size = rel(1.5)),
-          axis.title.x = element_blank())
+          strip.text.x = element_text(size = rel(1.5)),
+          axis.title = element_text(size = rel(1.2)),
+          axis.text = element_text(size = rel(1.2)),
+          legend.text = element_text(size = rel(1.2)),
+          legend.title = element_text(size = rel(1.2)),
+          axis.title.x = element_blank()) +
+    facet_wrap(facets = vars(scenario),
+               nrow = length(unique(plot_demand()$scenario)))
   
-},
-height = 600)
+})
 
 ```
 
@@ -221,7 +223,7 @@ renderLeaflet({
                    weight = 1,
                    fillColor = ~wr_type_pal(wr_type),
                    label = pod_points()$wr_id) %>%
-  addLegend(position = "bottomleft",
+  addLegend(position = "topright",
             pal = wr_type_pal,
             values = pod_points()$wr_type,
             title = "Water Right Type",
@@ -229,13 +231,13 @@ renderLeaflet({
 })
 ```   
  
-### Demand Scenario Information {data-height=250}
+### Demand Scenario Details {data-height=250}
     
 ```{r}
 ```
 
 
-### Supply Scenario Information {data-height=250}
+### Supply Scenario Details {data-height=250}
     
 ```{r}
 ```
