@@ -154,31 +154,39 @@ plot_demand <- reactive({
               .groups = "drop")
 })
 
+# plot_height <- reactive({
+#   500 * length(input$scenario_selected)
+# })
+
 # Render the plot.
 renderPlot({
   
-  ggplot(data = plot_demand(),
-         aes(x = rept_date,
-             y = demand_daily_af,
-             group = fill_color,
-             fill = fill_color)) +
+  #  plot_height <- 500 # * length(input$scenario_selected)
+  ggplot(
+    data = plot_demand(),
+    aes(x = rept_date,
+        y = demand_daily_af,
+        group = fill_color,
+        fill = fill_color)) +
     geom_area(position = "stack") +
     scale_fill_manual(name = "Demand type:",
                       values = wa_demand_pal,
                       labels = c(paste(input$priority_selected, 
-                                        "& Junior Post-14 Demand"),
+                                       "& Junior Post-14 Demand"),
                                  "Senior Post-14 Demand",
                                  "Statement Demand")) +
     labs(y = "Acre-Feet/Day") +
-    theme(legend.position = "bottom",
-          strip.text.x = element_text(size = rel(1.5)),
-          axis.title = element_text(size = rel(1.2)),
-          axis.text = element_text(size = rel(1.2)),
-          legend.text = element_text(size = rel(1.2)),
-          legend.title = element_text(size = rel(1.2)),
-          axis.title.x = element_blank()) +
+    theme(#aspect.ratio = .5,
+                       legend.position = "bottom",
+                       strip.text.x = element_text(size = rel(1.5)),
+                       axis.title = element_text(size = rel(1.2)),
+                       axis.text = element_text(size = rel(1.2)),
+                       legend.text = element_text(size = rel(1.2)),
+                       legend.title = element_text(size = rel(1.2)),
+                       axis.title.x = element_blank()) +
     facet_wrap(facets = vars(scenario),
-               nrow = length(unique(plot_demand()$scenario)))
+               nrow = length(unique(plot_demand()$scenario))
+    )
   
 })
 
