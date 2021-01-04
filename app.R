@@ -8,6 +8,46 @@ library(dplyr)
 library(wesanderson)
 library(ggplot2)
 library(aws.s3)
+library(DT)
+
+## Initialize values. ---
+
+load_from_s3 <- FALSE
+
+## Load data files. ----
+
+if(load_from_s3) {
+  # Water Right Info.
+  s3load(object = "dwast-wrinfo.RData",
+         bucket = "dwr-enf-shiny")
+  
+  # Demand Data.
+  s3load(object = "dwast-demands.RData",
+         bucket = "dwr-enf-shiny")
+} else {
+  # Water Right Info.
+  load("./output/dwast-wrinfo-2020-12-18.RData")
+  
+  # Demand Data.
+  load("./output/dwast-demands-2020-12-15.RData")
+}
+
+## Define color palettes and plot order. ----
+
+# Water right type.
+wr_type_pal <-colorFactor(c(wes_palette("Darjeeling1"), 
+                            wes_palette("Darjeeling2"))[1:9],
+                          pods$wr_type)
+
+# Water availability demand.
+wa_demand_order <- ordered(
+  c("Junior Post-14",
+    "Post-14",
+    "Statement Demand",
+    "Environmental Demand")
+)
+wa_demand_pal <- wes_palettes$GrandBudapest1[c(2, 1, 4, 3)]
+names(wa_demand_pal) <- wa_demand_order
 
 ## UI --------------------------------------------------------------------------
 ui <- fluidPage(
@@ -50,13 +90,16 @@ ui <- fluidPage(
                  br(),
                  random_text(nwords = 50)
                ),
+               
+               # Main Panel.
                mainPanel(width = 9,
                  tabsetPanel(
                  
                    tabPanel(title = "Main",
                           column(width = 7,
                                  h4("Demand in XXX Watershed by WWW"),
-                                 plotOutput(outputId = "demand_plot")),
+                                 plotOutput(outputId = "demand_plot",
+                                            height = "auto")),
                           column(width = 5,
                                  h4("Watershed Location"),
                                  leafletOutput(outputId = "mini_map"),
@@ -66,9 +109,11 @@ ui <- fluidPage(
                  
                  tabPanel(title = "Water Right Info",
                           h4("Water Rights in XXX Watershed"),
-                          tableOutput(outputId = "table")),
+                          dataTableOutput(outputId = "wr_info_table")),
                  
-                 tabPanel(title = "Demand Data")
+                 tabPanel(title = "Demand Data",
+                          h4("Demands in Selected Scenario(s)"),
+                          dataTableOutput(outputId = "demand_table"))
                  )
                )
              )
@@ -86,7 +131,10 @@ ui <- fluidPage(
 server <- function(input, output, session) {
   
   # HUC-8 filter handler.
-  huc8_selected <- reactive({ input$huc8_selected })
+#  huc8_selected <- reactive({ input$huc8_selected })
+  
+  # Demand scenario filter handler.
+  scenario_selected <- reactive({ input$scenario_selected })
   
   # Grab demand and wr_info for selected HUC-8.
   ws_demand <- reactive({
@@ -111,9 +159,11 @@ server <- function(input, output, session) {
     req(input$scenario_selected)
     filter(ws_demand(), scenario %in% input$scenario_selected)
   })
+  
+  ################################################# WRONG FILTER
   scenario_wr_info <- reactive({
     req(input$scenario_selected)
-    filter(ws_wr_info(), scenario %in% input$scenario_selected)
+    filter(ws_wr_info(), wr_id %in% scenario_demand()$wr_id)
   })
   
   # Select priority year to slice.
@@ -145,14 +195,14 @@ server <- function(input, output, session) {
                 .groups = "drop")
   })
   
-  # plot_height <- reactive({
-  #   500 * length(input$scenario_selected)
-  # })
+  plot_height <- reactive({
+    500 * length(scenario_selected())
+  })
   
   # Render the plot.
   output$demand_plot <- renderPlot({
     
-    #  plot_height <- 500 # * length(input$scenario_selected)
+#    plot_height <- 700 # * length(input$scenario_selected)
     ggplot(
       data = plot_demand(),
       aes(x = rept_date,
@@ -179,7 +229,7 @@ server <- function(input, output, session) {
                  nrow = length(unique(plot_demand()$scenario))
       )
     
-  }, height = 600)
+  }, height = function() plot_height())
   
   
   
@@ -225,11 +275,18 @@ server <- function(input, output, session) {
                 opacity = 1)
   })
   
+  ## Water Rights Info Table. ----
   
+  output$wr_info_table <- renderDataTable({
+    ws_wr_info()
+  })  
   
+  ## Demand Table. ----
   
-  
-  
+  output$demand_table <- renderDataTable({
+    scenario_demand() %>% 
+      select(-p_year)
+  })  
   
   
   
@@ -249,9 +306,12 @@ server <- function(input, output, session) {
   output$print <- renderPrint({
     random_print("model")
   })
-  output$table <- renderTable({
-    random_table(10, 5)
+  
+  output$scenario_table <- renderTable({
+    plot_height()
   })
+  
+  
   output$text <- renderText({
     random_text(nwords = 50)
   })
