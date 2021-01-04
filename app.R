@@ -97,23 +97,34 @@ ui <- fluidPage(
                  
                    tabPanel(title = "Main",
                           column(width = 7,
-                                 h4("Demand in XXX Watershed by WWW"),
+                                 h4("Demand in Selected Watershed"),
                                  plotOutput(outputId = "demand_plot",
-                                            height = "auto")),
+                                            height = "auto")
+                                 ),
                           column(width = 5,
+                                 fluidRow(
                                  h4("Watershed Location"),
-                                 leafletOutput(outputId = "mini_map"),
+                                 leafletOutput(outputId = "mini_map",
+                                               height = "500px"),
                                  h4("Random Text"),
-                                 tableOutput(outputId = "text"))
+                                 tableOutput(outputId = "text")
+                                 )
+                                 )
                           ),
                  
                  tabPanel(title = "Water Right Info",
-                          h4("Water Rights in XXX Watershed"),
-                          dataTableOutput(outputId = "wr_info_table")),
+                          fluidRow(
+                          h4("Water Rights in Selected Watershed"),
+                          downloadButton(outputId = "dl_wr_info"),
+                          headerPanel(""),
+                          DTOutput(outputId = "wr_info_table")
+                          )
+                          ),
                  
                  tabPanel(title = "Demand Data",
                           h4("Demands in Selected Scenario(s)"),
-                          dataTableOutput(outputId = "demand_table"))
+                          DTOutput(outputId = "demand_table")
+                          )
                  )
                )
              )
@@ -160,8 +171,7 @@ server <- function(input, output, session) {
     filter(ws_demand(), scenario %in% input$scenario_selected)
   })
   
-  ################################################# WRONG FILTER
-  scenario_wr_info <- reactive({
+   scenario_wr_info <- reactive({
     req(input$scenario_selected)
     filter(ws_wr_info(), wr_id %in% scenario_demand()$wr_id)
   })
@@ -176,7 +186,7 @@ server <- function(input, output, session) {
                       selected = max(scenario_demand()$p_year, na.rm = TRUE))
   })
   
-  ## Render plot. ----
+  ## Summarize demand data for plot. ----
   
   plot_demand <- reactive({
     scenario_demand() %>% 
@@ -199,11 +209,10 @@ server <- function(input, output, session) {
     500 * length(scenario_selected())
   })
   
-  # Render the plot.
+  ## Render the plot. ----
   output$demand_plot <- renderPlot({
-    
-#    plot_height <- 700 # * length(input$scenario_selected)
-    ggplot(
+  
+      ggplot(
       data = plot_demand(),
       aes(x = rept_date,
           y = demand_daily_af,
@@ -230,7 +239,6 @@ server <- function(input, output, session) {
       )
     
   }, height = function() plot_height())
-  
   
   
   ## Render selected watershed map. ----
@@ -277,13 +285,25 @@ server <- function(input, output, session) {
   
   ## Water Rights Info Table. ----
   
-  output$wr_info_table <- renderDataTable({
-    ws_wr_info()
-  })  
+  output$wr_info_table <- renderDT({
+    datatable(data = ws_wr_info(),
+              options = list(pageLength = 20, 
+                             lengthMenu = c(10, 20, 100)),
+              filter = "top",
+              rownames = FALSE)
+  })
+  
+  output$dl_wr_info <- downloadHandler(
+    filename = paste0(input$huc8_selected, "_", "wr_info_", Sys.Date(), ".csv"),
+    content = function(file) {
+      data <- ws_wr_info()
+      write.csv(data, file, row.names = FALSE)
+    }
+  )
   
   ## Demand Table. ----
   
-  output$demand_table <- renderDataTable({
+  output$demand_table <- renderDT({
     scenario_demand() %>% 
       select(-p_year)
   })  
