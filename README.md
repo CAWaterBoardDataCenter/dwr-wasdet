@@ -89,6 +89,10 @@ Week of 12/21/20
 
 -   Add functionality to compare two demand plots in a watershed.
 
+Week of 1/4/20
+
+-   DIT/DMU removed jasperreport flat file links and replaced it with another useless tool. Rewriting `02-prep-reported-diversions.R` to pull reported diversion data directly from eWRIMS web page using RSelenium. A staff account is still required, but the data is accessible from outside the intranet this way.
+
 ### To-Do List
 
 -   Upgrade `prep_demand_daily.R` to process all reported diversions for 2010 on into list, save as .RData for tool to pick up.

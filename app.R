@@ -26,10 +26,10 @@ if(load_from_s3) {
          bucket = "dwr-enf-shiny")
 } else {
   # Water Right Info.
-  load("./output/dwast-wrinfo-2020-12-18.RData")
+  load("./output/dwast-wrinfo-2021-01-05.RData")
   
   # Demand Data.
-  load("./output/dwast-demands-2020-12-15.RData")
+  load("./output/dwast-demands-2021-01-05.RData")
 }
 
 ## Define color palettes and plot order. ----

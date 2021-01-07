@@ -51,3 +51,5 @@ gis
 output
 demands
 scratch.R
+credentials.csv
+wruds_downloads
