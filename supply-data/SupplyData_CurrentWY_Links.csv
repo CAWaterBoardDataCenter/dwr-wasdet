@@ -1,0 +1,21 @@
+huc8,source_author,source_gage,source_sensor,source_units,source_freq,source_link
+McCloud,CDEC,MSS,65,af,monthly,https://cdec.water.ca.gov/dynamicapp/req/CSVDataServlet?Stations=MSS&SensorNums=65&dur_code=M&Start=2020-10
+Sacramento Headwaters,CDEC,SIS,65,af,monthly,https://cdec.water.ca.gov/dynamicapp/req/CSVDataServlet?Stations=SIS&SensorNums=65&dur_code=M&Start=2020-10
+Upper Stony,CNRFC,EPRC1,Raw Obv,taf,daily,https://www.cnrfc.noaa.gov/ensembleProductTabular.php?id=EPRC1&prodID=9&year=2021
+Middle Fork Feather,CNRFC,MRMC1,Raw Obv,taf,daily,https://www.cnrfc.noaa.gov/ensembleProductTabular.php?id=MRMC1&prodID=9&year=2021
+Upper Yuba,CDEC,YRS,65,af,monthly,https://cdec.water.ca.gov/dynamicapp/req/CSVDataServlet?Stations=YRS&SensorNums=65&dur_code=M&Start=2020-10
+North Fork American,CNRFC,NFDC1,Raw Obv,taf,daily,https://www.cnrfc.noaa.gov/ensembleProductTabular.php?id=NFDC1&prodID=9&year=2021
+North Fork American,CNRFC,MFAC1,Raw Obv,taf,daily,https://www.cnrfc.noaa.gov/ensembleProductTabular.php?id=MFAC1&prodID=9&year=2021
+Cow Creek,CNRFC,CWCC1,Raw Obv,taf,daily,https://www.cnrfc.noaa.gov/ensembleProductTabular.php?id=CWCC1&prodID=9&year=2021
+Cottonwood Creek,CNRFC,CWAC1,Raw Obv,taf,daily,https://www.cnrfc.noaa.gov/ensembleProductTabular.php?id=CWAC1&prodID=9&year=2021
+Battle Creek,CNRFC,COTC1,Raw Obv,taf,daily,https://www.cnrfc.noaa.gov/ensembleProductTabular.php?id=COTC1&prodID=9&year=2021
+Butte Creek,CNRFC,BKCC1,Raw Obv,taf,daily,https://www.cnrfc.noaa.gov/ensembleProductTabular.php?id=BKCC1&prodID=9&year=2021
+Upper Putah,CNRFC,LBEC1,Raw Obv,taf,daily,https://www.cnrfc.noaa.gov/ensembleProductTabular.php?id=LBEC1&prodID=9&year=2021
+Upper San Joaquin,CDEC,SJF,65,af,monthly,https://cdec.water.ca.gov/dynamicapp/req/CSVDataServlet?Stations=SJF&SensorNums=65&dur_code=M&Start=2020-10
+Fresno River,CNRFC,HIDC1,Raw Obv,taf,daily,https://www.cnrfc.noaa.gov/ensembleProductTabular.php?id=HIDC1&prodID=9&year=2021
+Upper Merced,CDEC,MRC,65,af,monthly,https://cdec.water.ca.gov/dynamicapp/req/CSVDataServlet?Stations=MRC&SensorNums=65&dur_code=M&Start=2020-10
+Upper Tuolumne,CDEC,TLG,65,af,monthly,https://cdec.water.ca.gov/dynamicapp/req/CSVDataServlet?Stations=TLG&SensorNums=65&dur_code=M&Start=2020-10
+Upper Stanislaus,CDEC,SNS,65,af,monthly,https://cdec.water.ca.gov/dynamicapp/req/CSVDataServlet?Stations=SNS&SensorNums=65&dur_code=M&Start=2020-10
+Upper Calaveras California,CNRFC,NHGC1,Raw Obv,taf,daily,https://www.cnrfc.noaa.gov/ensembleProductTabular.php?id=NHGC1&prodID=9&year=2021
+Upper Mokelumne,CDEC,MKM,65,af,monthly,https://cdec.water.ca.gov/dynamicapp/req/CSVDataServlet?Stations=MKM&SensorNums=65&dur_code=M&Start=2020-10
+Upper Cosumnes,CDEC,CSN,65,af,monthly,https://cdec.water.ca.gov/dynamicapp/req/CSVDataServlet?Stations=CSN&SensorNums=65&dur_code=M&Start=2020-10

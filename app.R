@@ -51,6 +51,7 @@ names(wa_demand_pal) <- wa_demand_order
 
 ## UI --------------------------------------------------------------------------
 ui <- fluidPage(
+  useShinyjs(),
   
   # Set theme.
   theme = shinytheme("cerulean"),
@@ -65,6 +66,7 @@ ui <- fluidPage(
                
                # Sidebar Panel.
                sidebarPanel(width = 3,
+                 fluidRow(
                             
                  ## Select HUC-8 watershed.
                  selectInput(inputId = "huc8_selected",
@@ -79,17 +81,55 @@ ui <- fluidPage(
                                 choices = NULL,
                                 selected = NULL,
                                 multiple = TRUE,
-                                options = list(maxItems = 2)),
+                                options = list(maxItems = 2)
+                                ),
+                 
+                 ## Select Visualization.
+                 radioButtons(inputId = "plot_type",
+                              label = "Select Visualization:",
+                              choices = c(
+                                "Demand By Water Right Type" = "db_wrt",
+                                "Demand By Priority" = "db_pri",
+                                "Water Availability Screening" = "was"),
+                              selected = "was"
+                              ),
+                 
+                 random_text(nwords = 25),
+                 br(), br(),
+                 
+                 # Select supply forecasts (limit 3?) # DRAFT ###
+                 selectizeInput(inputId = "supply_selected",
+                                label = "Select Up To Three Supply Scenarios:",
+                                choices = c(
+                                  "Forecast: 99% Probability of Exceedance",
+                                  "Forecast: 90% Probability of Exceedance",
+                                  "Forecast: 75% Probability of Exceedance",
+                                  "Forecast: 50% Probability of Exceedance",
+                                  "Forecast: 25% Probability of Exceedance",
+                                  "Forecast: 10% Probability of Exceedance",
+                                  "Historical: Mean",
+                                  "Historical: Median",
+                                  "Historical: p10",
+                                  "Historical: p90",
+                                  "Historical: Individual Years?"
+                                ),
+                                selected = c(
+                                  "Forecast: 90% Probability of Exceedance",
+                                  "Forecast: 75% Probability of Exceedance",
+                                  "Forecast: 50% Probability of Exceedance"
+                                ),
+                                multiple = TRUE,
+                                options = list(maxItems = 3)
+                 ),
                  
                  ## Select priority year to slice.
                  selectInput(inputId = "priority_selected",
                              label = "Select Priority Year:",
                              choices = NULL,
                              selected = NULL,
-                             multiple = FALSE),
-                 br(),
-                 random_text(nwords = 50)
-               ),
+                             multiple = FALSE)
+                 ) # End fluidRow
+                 ),
                
                # Main Panel.
                mainPanel(width = 9,
@@ -98,8 +138,7 @@ ui <- fluidPage(
                    tabPanel(title = "Main",
                           column(width = 7,
                                  h4("Demand in Selected Watershed"),
-                                 plotOutput(outputId = "demand_plot",
-                                            height = "auto")
+                                 plotOutput(outputId = "demand_plot")
                                  ),
                           column(width = 5,
                                  fluidRow(
@@ -140,9 +179,17 @@ ui <- fluidPage(
 
 ## SERVER ----------------------------------------------------------------------
 server <- function(input, output, session) {
-  
-  # HUC-8 filter handler.
-#  huc8_selected <- reactive({ input$huc8_selected })
+
+  # Watch plot type radio buttons.
+  observe({
+    if(input$plot_type != "was") {
+      hide(id = "supply_selected")
+      hide(id = "priority_selected")
+    } else {
+      show(id = "supply_selected")
+      show(id = "priority_selected")
+    }
+  })
   
   # Demand scenario filter handler.
   scenario_selected <- reactive({ input$scenario_selected })
@@ -219,6 +266,8 @@ server <- function(input, output, session) {
           group = fill_color,
           fill = fill_color)) +
       geom_area(position = "stack") +
+      scale_x_date(date_labels = "%m/%d/%Y",
+                   date_minor_breaks = "1 month") +
       scale_fill_manual(name = "Demand type:",
                         values = wa_demand_pal,
                         labels = c(paste(input$priority_selected, 
@@ -226,6 +275,7 @@ server <- function(input, output, session) {
                                    "Senior Post-14 Demand",
                                    "Statement Demand")) +
       labs(y = "Acre-Feet/Day") +
+      theme_bw() +
       theme(
         legend.position = "bottom",
         strip.text.x = element_text(size = rel(1.5)),

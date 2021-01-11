@@ -1,0 +1,21 @@
+huc8,source_author,source_gage,source_sensor,source_units,source_freq,source_link
+McCloud,CNRFC,MSSC1,SQME,cfsd,daily,https://www.cnrfc.noaa.gov/ensembleProductCSV.php
+Sacramento Headwaters,CNRFC,SHDC1,SQME,cfsd,daily,https://www.cnrfc.noaa.gov/ensembleProductCSV.php
+Upper Stony,CNRFC,EPRC1,SQME,cfsd,daily,https://www.cnrfc.noaa.gov/ensembleProductCSV.php
+Middle Fork Feather,CNRFC,MRMC1,SQME,cfsd,daily,https://www.cnrfc.noaa.gov/ensembleProductCSV.php
+Upper Yuba,B120-SRWSI,Yuba River near Smartville plus Deer Creek,"Unimpaired Flow (99%, 90%, 75%, 50%,  25%, 10%)",taf,monthly Dec-May,https://cdec.water.ca.gov/reportapp/javareports?name=SRWSI.pdf
+North Fork American,CNRFC,NFDC1,SQME,cfsd,daily,https://www.cnrfc.noaa.gov/ensembleProductCSV.php
+North Fork American,CNRFC,MFAC1,SQME,cfsd,daily,https://www.cnrfc.noaa.gov/ensembleProductCSV.php
+Cow Creek,CNRFC,CWCC1,SQME,cfsd,daily,https://www.cnrfc.noaa.gov/ensembleProductCSV.php
+Cottonwood Creek,CNRFC,CWAC1,SQME,cfsd,daily,https://www.cnrfc.noaa.gov/ensembleProductCSV.php
+Battle Creek,CNRFC,COTC1,SQME,cfsd,daily,https://www.cnrfc.noaa.gov/ensembleProductCSV.php
+Butte Creek,CNRFC,BKCC1,SQME,cfsd,daily,https://www.cnrfc.noaa.gov/ensembleProductCSV.php
+Upper Putah,CNRFC,LBEC1,SQME,cfsd,daily,https://www.cnrfc.noaa.gov/ensembleProductCSV.php
+Upper San Joaquin,B120-SJWSI,San Joaquin River inflow to Millerton Lake,"Unimpaired Flow (99%, 90%, 75%, 50%,  25%, 10%)",taf,monthly Dec-May,https://cdec.water.ca.gov/reportapp/javareports?name=SJWSI.pdf
+Fresno River,CNRFC,HIDC1,SQME,cfsd,daily,https://www.cnrfc.noaa.gov/ensembleProductCSV.php
+Upper Merced,B120-SJWSI,Merced River below Merced Falls,"Unimpaired Flow (99%, 90%, 75%, 50%,  25%, 10%)",taf,monthly Dec-May,https://cdec.water.ca.gov/reportapp/javareports?name=SJWSI.pdf
+Upper Tuolumne,B120-SJWSI,Tuolumne River below La Grange Reservoir,"Unimpaired Flow (99%, 90%, 75%, 50%,  25%, 10%)",taf,monthly Dec-May,https://cdec.water.ca.gov/reportapp/javareports?name=SJWSI.pdf
+Upper Stanislaus,B120-SJWSI,Stanislaus River below Goodwin Reservoir,"Unimpaired Flow (99%, 90%, 75%, 50%,  25%, 10%)",taf,monthly Dec-May,https://cdec.water.ca.gov/reportapp/javareports?name=SJWSI.pdf
+Upper Calaveras California,CNRFC,NHGC1,SQME,cfsd,daily,https://www.cnrfc.noaa.gov/ensembleProductCSV.php
+Upper Mokelumne,CNRFC,CMPC1,SQME,cfsd,daily,https://www.cnrfc.noaa.gov/ensembleProductCSV.php
+Upper Cosumnes,CNRFC,MHBC1,SQME,cfsd,daily,https://www.cnrfc.noaa.gov/ensembleProductCSV.php
