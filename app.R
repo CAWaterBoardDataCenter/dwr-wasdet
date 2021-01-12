@@ -58,7 +58,7 @@ ui <- fluidPage(
   
   # Dashboard Title
   titlePanel(title = div(img(src = "DWR-ENF-Logo-48px.png"), 
-                         "Water Availability Screening Tool")),
+                         "Water Supply/Demand Exploration Tool")),
   
   tabsetPanel(
     tabPanel(title = "Statewide By HUC-8 Watershed", #Tab Panel 1
@@ -90,7 +90,7 @@ ui <- fluidPage(
                               choices = c(
                                 "Demand By Water Right Type" = "db_wrt",
                                 "Demand By Priority" = "db_pri",
-                                "Water Availability Screening" = "was"),
+                                "Supply Exploration" = "was"),
                               selected = "was"
                               ),
                  
@@ -124,7 +124,7 @@ ui <- fluidPage(
                  
                  ## Select priority year to slice.
                  selectInput(inputId = "priority_selected",
-                             label = "Select Priority Year:",
+                             label = "Select Demand Priority Year:",
                              choices = NULL,
                              selected = NULL,
                              multiple = FALSE)
@@ -253,7 +253,7 @@ server <- function(input, output, session) {
   })
   
   plot_height <- reactive({
-    500 * length(scenario_selected())
+    325 * length(scenario_selected())
   })
   
   ## Render the plot. ----
@@ -278,15 +278,16 @@ server <- function(input, output, session) {
       theme_bw() +
       theme(
         legend.position = "bottom",
-        strip.text.x = element_text(size = rel(1.5)),
-        axis.title = element_text(size = rel(1.2)),
-        axis.text = element_text(size = rel(1.2)),
-        legend.text = element_text(size = rel(1.2)),
-        legend.title = element_text(size = rel(1.2)),
+        #   strip.text.x = element_text(size = rel(1.5)),
+        #   axis.title = element_text(size = rel(1.2)),
+        #   axis.text = element_text(size = rel(1.2)),
+        #   legend.text = element_text(size = rel(1.2)),
+        #   legend.title = element_text(size = rel(1.2)),
         axis.title.x = element_blank()) +
       facet_wrap(facets = vars(scenario),
                  nrow = length(unique(plot_demand()$scenario))
-      )
+      ) #+
+ #     guides(fill = guide_legend(nrow = 2, byrow = TRUE))
     
   }, height = function() plot_height())
   
