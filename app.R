@@ -246,7 +246,7 @@ server <- function(input, output, session) {
                                           if_else(p_year >= input$priority_selected,
                                                   "Junior Post-14", "Post-14"))),
              fill_color = ordered(fill_color, levels = wa_demand_order)) %>% 
-      group_by(scenario, rept_date, fill_color) %>% 
+      group_by(scenario, plot_date, fill_color) %>% 
       summarise(demand_daily_af = sum(demand_daily_af, na.rm = TRUE),
                 demand_daily_cfs = sum(demand_daily_cfs, na.rm = TRUE),
                 .groups = "drop")
@@ -261,7 +261,7 @@ server <- function(input, output, session) {
   
       ggplot(
       data = plot_demand(),
-      aes(x = rept_date,
+      aes(x = plot_date,
           y = demand_daily_af,
           group = fill_color,
           fill = fill_color)) +

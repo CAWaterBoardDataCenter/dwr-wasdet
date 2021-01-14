@@ -102,26 +102,26 @@ demand <- future_map(.x = demand,
 ## map to daily time series with project_year.
 
 # Create vector containing series of dates for project year.
-months_to_dates <- tibble(rept_date = seq(as.Date(paste0(project_year, 
+months_to_dates <- tibble(plot_date = seq(as.Date(paste0(project_year, 
                                                          "-01-01")),
                                           as.Date(paste0(project_year, 
                                                          "-12-31")),
                                           by = "days"),
-                          rept_month = as.numeric(month(rept_date)))
+                          rept_month = as.numeric(month(plot_date)))
 
 make_daily_demands <- function(x) {
   x <- x %>% 
     right_join(., months_to_dates, by = "rept_month") %>%
-    mutate(demand_daily_af = demand / as.numeric(days_in_month(rept_date)),
+    mutate(demand_daily_af = demand / as.numeric(days_in_month(plot_date)),
            demand_daily_cfs = demand_daily_af * 0.504166667) %>% 
     select(huc8_name,
            scenario,
-           rept_date, 
+           plot_date, 
            priority, 
            demand_daily_af,
            demand_daily_cfs) %>% 
     arrange(scenario,
-            rept_date, 
+            plot_date, 
             priority, 
             demand_daily_af,
             demand_daily_cfs)
