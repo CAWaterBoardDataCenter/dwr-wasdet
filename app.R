@@ -183,11 +183,11 @@ server <- function(input, output, session) {
   # Watch plot type radio buttons.
   observe({
     if(input$plot_type != "was") {
-      hide(id = "supply_selected")
-      hide(id = "priority_selected")
+      hideElement(id = "supply_selected")
+      hideElement(id = "priority_selected")
     } else {
-      show(id = "supply_selected")
-      show(id = "priority_selected")
+      showElement(id = "supply_selected")
+      showElement(id = "priority_selected")
     }
   })
   
