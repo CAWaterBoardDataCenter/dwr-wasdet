@@ -111,7 +111,7 @@ months_to_dates <- tibble(plot_date = seq(as.Date(paste0(project_year,
 make_daily_demands <- function(x) {
   x <- x %>% 
     right_join(., months_to_dates, by = "rept_month") %>%
-    mutate(demand_daily_af = demand / as.numeric(days_in_month(rept_date)),
+    mutate(demand_daily_af = demand / as.numeric(days_in_month(plot_date)),
            demand_cfs = demand_daily_af * 0.504166667) %>% 
     select(huc8_name,
            scenario,
