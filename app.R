@@ -12,7 +12,7 @@ library(DT)
 
 ## Initialize values. ---
 
-load_from_s3 <- FALSE
+load_from_s3 <- TRUE
 
 ## Load data files. ----
 
@@ -201,7 +201,7 @@ server <- function(input, output, session) {
              fill_color = ordered(fill_color, levels = wa_demand_order)) %>% 
       group_by(scenario, rept_date, fill_color) %>% 
       summarise(demand_daily_af = sum(demand_daily_af, na.rm = TRUE),
-                demand_daily_cfs = sum(demand_daily_cfs, na.rm = TRUE),
+                demand_cfs = sum(demand_cfs, na.rm = TRUE),
                 .groups = "drop")
   })
   

@@ -3,7 +3,6 @@ library(dplyr)
 library(readr)
 library(janitor)
 library(lubridate)
-library(ggplot2)
 library(purrr)
 library(future)
 library(furrr)
@@ -11,7 +10,7 @@ library(aws.s3)
 
 ## Initialization. ----
 
-download_divs <- TRUE
+download_divs <- FALSE
 
 # Load functions.
 source("f_getReportedDivs.R")
@@ -113,18 +112,18 @@ make_daily_demands <- function(x) {
   x <- x %>% 
     right_join(., months_to_dates, by = "rept_month") %>%
     mutate(demand_daily_af = demand / as.numeric(days_in_month(rept_date)),
-           demand_daily_cfs = demand_daily_af * 0.504166667) %>% 
+           demand_cfs = demand_daily_af * 0.504166667) %>% 
     select(huc8_name,
            scenario,
            rept_date, 
            priority, 
            demand_daily_af,
-           demand_daily_cfs) %>% 
+           demand_cfs) %>% 
     arrange(scenario,
             rept_date, 
             priority, 
             demand_daily_af,
-            demand_daily_cfs)
+            demand_cfs)
 }
 demand <- future_map(.x = demand,
               .f = make_daily_demands,
