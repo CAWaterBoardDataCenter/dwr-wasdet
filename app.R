@@ -12,7 +12,7 @@ library(DT)
 
 ## Initialize values. ---
 
-load_from_s3 <- TRUE
+load_from_s3 <- FALSE
 
 ## Load data files. ----
 
@@ -26,10 +26,10 @@ if(load_from_s3) {
          bucket = "dwr-enf-shiny")
 } else {
   # Water Right Info.
-  load("./output/dwast-wrinfo-2021-01-05.RData")
+  load("./output/dwast-wrinfo.RData")
   
   # Demand Data.
-  load("./output/dwast-demands-2021-01-05.RData")
+  load("./output/dwast-demands.RData")
 }
 
 ## Define color palettes and plot order. ----

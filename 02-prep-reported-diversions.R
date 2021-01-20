@@ -13,7 +13,7 @@ library(aws.s3)
 download_divs <- FALSE
 
 # Load functions.
-source("f_getReportedDivs.R")
+# source("f_getReportedDivs.R")
 
 
 # set up parallel R sessions.
@@ -146,12 +146,10 @@ plan(sequential)
 
 # Save to S3 for Shiny app to pick up.
 demand_create_date <- Sys.Date()
-save_fname <- paste0("./output/dwast-demands-",
-                     create_date,".RData")
 save(demand,
      demand_create_date,
-     file = save_fname)
-put_object(file = save_fname, 
+     file = "./output/dwast-demands.RData")
+put_object(file = "./output/dwast-demands.RData", 
           object = "dwast-demands.RData", 
           bucket = "dwr-enf-shiny",
           multipart = TRUE)
