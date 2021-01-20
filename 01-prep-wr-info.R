@@ -334,15 +334,13 @@ huc8_layer <- huc8_layer %>%
 
 # Save to S3 for Shiny app to pick up.
 create_date <- Sys.Date()
-save_fname <- paste0("./output/dwast-wrinfo-",
-                            create_date,".RData")
 save(wr_info, 
      pods,
      huc8_layer,
      wr_type_list,
      create_date,
-     file = save_fname)
-put_object(file = save_fname, 
+     file = "./output/dwast-wrinfo.RData")
+put_object(file = "./output/dwast-wrinfo.RData", 
            object = "dwast-wrinfo.RData", 
            bucket = "dwr-enf-shiny",
            multipart = TRUE)
