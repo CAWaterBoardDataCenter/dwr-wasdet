@@ -10,7 +10,7 @@ supply <- supply %>%
   rename(huc8_name = huc8)
 
 
-create_report(supply)
+# create_report(supply)
 
 test_supply <- filter(supply, huc8_name == "McCloud")
 
