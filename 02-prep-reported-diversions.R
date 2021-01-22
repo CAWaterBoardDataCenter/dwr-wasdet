@@ -111,19 +111,19 @@ months_to_dates <- tibble(plot_date = seq(as.Date(paste0(project_year,
 make_daily_demands <- function(x) {
   x <- x %>% 
     right_join(., months_to_dates, by = "rept_month") %>%
-    mutate(demand_daily_af = demand / as.numeric(days_in_month(plot_date)),
-           demand_cfs = demand_daily_af * 0.504166667) %>% 
+    mutate(af_day = demand / as.numeric(days_in_month(plot_date)),
+           cfs = af_day * 0.504166667) %>% 
     select(huc8_name,
            scenario,
            plot_date, 
            priority, 
-           demand_daily_af,
-           demand_cfs) %>% 
+           af_day,
+           cfs) %>% 
     arrange(scenario,
             plot_date, 
             priority, 
-            demand_daily_af,
-            demand_cfs)
+            af_day,
+            cfs)
 }
 demand <- future_map(.x = demand,
               .f = make_daily_demands,

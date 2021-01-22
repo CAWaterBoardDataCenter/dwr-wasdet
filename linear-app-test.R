@@ -11,12 +11,24 @@ library(aws.s3)
 library(DT)
 
 
-load_from_s3 <- TRUE
+load_from_s3 <- FALSE
 
+## Selections. ----
+
+# HUC-8 watershed.
+huc8_selected <- "North Fork American"
+
+# Demand scenario.
+#d_scene_selected <- "Reported Diversions - 2019"
+d_scene_selected <- c("Reported Diversions - 2019", "Reported Diversions - 2011")
+
+# Supply scenario.
+#s_scene_selected <- "Historic: Estimated Mean Unimpaired Flow at AMA, Below Normal Year"
+s_scene_selected <- c("Historic: Estimated Mean Unimpaired Flow at AMA, Below Normal Year",
+                     "Historic: Estimated Mean Unimpaired Flow at AMA, Dry Year")
+
+# Priority cutoff.
 priority_selected <- 1950
-huc8_selected <- "Trinity"
-# scenario_selected <- "Reported Diversions - 2019"
-scenario_selected <- c("Reported Diversions - 2019", "Reported Diversions - 2011")
 
 ## Load data files. ----
 
@@ -60,64 +72,107 @@ wa_demand_order <- ordered(
 wa_demand_pal <- wes_palettes$GrandBudapest1[c(2, 1, 4, 3)]
 names(wa_demand_pal) <- wa_demand_order
 
-## watershed
+# Supply.
+wa_supply_pal <- colorRampPalette(wes_palette("Zissou1")[1:2])(3)
 
-ws_demand <- demand[[huc8_selected]]
+
+
+
+## get Filtered Water Right Info.
+
 ws_wr_info <- filter(wr_info, huc8_name %in% huc8_selected)
 
-## scenario
+# Get plot demands.
+plot_demand <- filter(demand[[huc8_selected]], 
+                      scenario %in% d_scene_selected) %>% 
+  mutate(fill_color = if_else(priority == "Statement Demand",
+                              "Statement Demand",
+                              if_else(priority == "Statement Demand",
+                                      "Statement Demand",
+                                      if_else(p_year >= priority_selected,
+                                              "Junior Post-14", "Post-14"))),
+         fill_color = ordered(fill_color, levels = wa_demand_order)) %>% 
+  group_by(huc8_name, scenario, plot_date, fill_color) %>% 
+  summarise(af_day = sum(af_day, na.rm = TRUE),
+            cfs = sum(cfs, na.rm = TRUE),
+            .groups = "drop") %>% 
+  mutate(plot_group = "demand")
 
-scenario_demand <- filter(ws_demand, scenario %in% scenario_selected)
+## Plot supply.
 
+plot_supply <- filter(supply, huc8_name %in% huc8_selected,
+                      scenario %in% s_scene_selected) %>% 
+  mutate(fill_color = NA,
+         plot_group = "supply") %>% 
+  select(huc8_name, scenario, plot_date, af_day, cfs, plot_group)
 
-## Munge scenario demand for plot.
-
-plot_demand <- scenario_demand %>% 
-    mutate(fill_color = if_else(priority == "Statement Demand",
-                                "Statement Demand",
-                                if_else(priority == "Statement Demand",
-                                        "Statement Demand",
-                                        if_else(p_year >= priority_selected,
-                                                "Junior Post-14", "Post-14"))),
-           fill_color = ordered(fill_color, levels = wa_demand_order)) %>% 
-    group_by(scenario, rept_date, fill_color) %>% 
-    summarise(demand_daily_af = sum(demand_daily_af, na.rm = TRUE),
-              demand_cfs = sum(demand_cfs, na.rm = TRUE),
-              .groups = "drop")
-
-
+plot_data <- bind_rows(plot_demand, plot_supply)
 
 ## Render plot. ----
 
-g <- ggplot(data = plot_demand,
-            aes(x = rept_date,
-                y = demand_daily_af,
-                group = fill_color,
-                fill = fill_color)) 
+g <- ggplot(data = plot_data,
+            aes(x = plot_date,
+                y = af_day)) 
 
-g <- g + geom_area(position = "stack")
+# Demand
+g <- g + geom_area(data = subset(plot_data, plot_group == "demand"),
+                   position = "stack",
+                   aes(fill = fill_color))
+g
 
-g <- g + scale_fill_manual(name = "Demand type:",
+
+
+# Supply
+g <- g + geom_point(data = subset(plot_data, plot_group == "supply"),
+                    aes(color = scenario),
+                    size = 4)
+g
+
+g <- g + facet_wrap(facets = vars(plot_demand$scenario), ## <-----------------
+                    ncol = 1)
+g
+
+g <- g + geom_line(data = plot_supply,
+                   aes(group = supply_scenario,
+                       color = supply_scenario))
+g
+
+g <- g + scale_fill_manual(name = "Demand Type:",
                            values = wa_demand_pal,
                            labels = c(paste(priority_selected, 
                                             "& Junior Post-14 Demand"),
                                       "Senior Post-14 Demand",
                                       "Statement Demand"))
+g
+
+# g <- g + scale_color_manual(name = "Supply Scenario:")
+
+
+g
+
 
 g <- g + labs(y = "Acre-Feet/Day")
+g
 
-g <- g + theme(
-    legend.position = "bottom",
-    strip.text.x = element_text(size = rel(1.5)),
-    axis.title = element_text(size = rel(1.2)),
-    axis.text = element_text(size = rel(1.2)),
-    legend.text = element_text(size = rel(1.2)),
-    legend.title = element_text(size = rel(1.2)),
-    axis.title.x = element_blank())
 
-g <- g + facet_wrap(facets = vars(plot_demand$scenario),
-             nrow = length(unique(plot_demand$scenario)))
 
+
+
+
+# g <- g + theme(
+#     legend.position = "bottom",
+#     strip.text.x = element_text(size = rel(1.5)),
+#     axis.title = element_text(size = rel(1.2)),
+#     axis.text = element_text(size = rel(1.2)),
+#     legend.text = element_text(size = rel(1.2)),
+#     legend.title = element_text(size = rel(1.2)),
+#     axis.title.x = element_blank())
+# 
+# g
+
+
+
+g
 
 
 
