@@ -52,16 +52,16 @@ if(download_divs) {
 diversions_raw <- read_csv(divs_fname)
 
 diversions <- diversions_raw %>% clean_names() %>% 
-  select(scenario = year,
+  select(d_scenario = year,
          wr_id = appl_id,
          rept_month = month,
          everything(),
          -water_right_id) %>% 
-  filter(scenario >= 2011)
+  filter(d_scenario >= 2011)
 
 # Recode scenario name to be more descriptive.
 diversions <- diversions %>% 
-  mutate(scenario = paste0("Reported Diversions - ", scenario))
+  mutate(d_scenario = paste0("Reported Diversions - ", d_scenario))
 
 # join wr_info.
 diversions <- diversions %>% 
@@ -74,7 +74,10 @@ diversions <- diversions %>%
             by = "wr_id")
 
 # Split diversions into list of tibbles by scenario.
-demand <- split(diversions, diversions$huc8_name)
+demand <- split(x = diversions, 
+                f = diversions$huc8_name)
+demand <- future_map(.x = demand,
+                     .f = ~ select(., -huc8_name))
 
 # Scale diversion amounts by HUC-8 weighting factor.
 demand <- future_map(.x = demand,
@@ -83,13 +86,12 @@ demand <- future_map(.x = demand,
 # Aggregate diversions by huc8_name and priority. 
 agg_huc_pri <- function(x) {
   x <- x %>% 
-    group_by(huc8_name,
-             scenario,
+    group_by(d_scenario,
              priority, 
              rept_month) %>% 
     summarise(demand = sum(amount_weighted, na.rm = TRUE),
               .groups = "drop") %>% 
-    arrange(scenario, 
+    arrange(d_scenario, 
             priority, 
             rept_month) %>% 
     drop_na()
@@ -111,19 +113,18 @@ months_to_dates <- tibble(plot_date = seq(as.Date(paste0(project_year,
 make_daily_demands <- function(x) {
   x <- x %>% 
     right_join(., months_to_dates, by = "rept_month") %>%
-    mutate(demand_daily_af = demand / as.numeric(days_in_month(plot_date)),
-           demand_cfs = demand_daily_af * 0.504166667) %>% 
-    select(huc8_name,
-           scenario,
+    mutate(af_day = demand / as.numeric(days_in_month(plot_date)),
+           cfs = af_day * 0.504166667) %>% 
+    select(d_scenario,
            plot_date, 
            priority, 
-           demand_daily_af,
-           demand_cfs) %>% 
-    arrange(scenario,
+           af_day,
+           cfs) %>% 
+    arrange(d_scenario,
             plot_date, 
             priority, 
-            demand_daily_af,
-            demand_cfs)
+            af_day,
+            cfs)
 }
 demand <- future_map(.x = demand,
               .f = make_daily_demands,
