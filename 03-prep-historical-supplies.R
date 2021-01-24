@@ -58,17 +58,17 @@ supply_hist_stats <- supply_hist_stats %>%
                                                  Above Normal Year",
                                                  "Wet Year")))))
 supply_hist_stats <- supply_hist_stats %>% 
-  mutate(scenario = paste0("Historic: Estimated ", 
+  mutate(s_scenario = paste0("Historic: Estimated ", 
                                   toTitleCase(stat), 
                                   " Unimpaired Flow at ", 
                                   source_gage, ", ",
                                   wy_type)) %>% 
   select(huc8_name, 
-         scenario,
+         s_scenario,
          rept_month,
          af,
          cfs) %>% 
-  arrange(huc8_name, scenario, rept_month) %>% 
+  arrange(huc8_name, s_scenario, rept_month) %>% 
   drop_na()
 
 # Build plot_date.
@@ -80,12 +80,12 @@ supply_hist_stats <- supply_hist_stats %>%
 supply_hist_stats <- supply_hist_stats %>% 
   mutate(af_day = af / as.numeric(days_in_month(plot_date))) %>% 
   select(huc8_name,
-         scenario,
+         s_scenario,
          plot_date,
          af_day,
          cfs) %>% 
   arrange(huc8_name,
-          scenario,
+          s_scenario,
           plot_date)
 
 ## Combine supply sources.
@@ -117,8 +117,8 @@ put_object(file = "./output/dwast-supplies.RData",
 #                 ymin = cfs - 0.005 * max(cfs), 
 #                 xmax = plot_date + 10, 
 #                 ymax = cfs + 0.005 * max(cfs), 
-#                 fill = scenario)) +
-#   geom_line(aes(color = scenario))
+#                 fill = s_scenario)) +
+#   geom_line(aes(color = s_scenario))
 
 
 

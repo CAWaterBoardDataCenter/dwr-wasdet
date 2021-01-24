@@ -143,14 +143,19 @@ demand <- map(.x = demand,
 # Kill parallel R sessions. 
 plan(sequential)
 
+
+### TEST SET: HUC8 Watersshed that start with "N".
+
+demand <- demand[grep("N", names(demand))]
+
 ## Save data files locally and to S3 bucket. ----
 
 # Save to S3 for Shiny app to pick up.
 demand_create_date <- Sys.Date()
 save(demand,
      demand_create_date,
-     file = "./output/dwast-demands.RData")
-put_object(file = "./output/dwast-demands.RData", 
-          object = "dwast-demands.RData", 
-          bucket = "dwr-enf-shiny",
-          multipart = TRUE)
+     file = "./output/dwast-demands-test-set.RData")
+# put_object(file = "./output/dwast-demands.RData", 
+#           object = "dwast-demands.RData", 
+#           bucket = "dwr-enf-shiny",
+#           multipart = TRUE)
