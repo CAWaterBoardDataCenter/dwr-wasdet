@@ -16,7 +16,7 @@ library(DT)
 ## Initialize values. ---
 
 # Data source.
-load_from_s3 <- FALSE
+load_from_s3 <- TRUE
 
 # Water availability demand type order.
 wa_demand_order <- ordered(c("Junior Post-14",
@@ -138,11 +138,15 @@ server <- function(input, output, session) {                          # b server
   
   huc8_selected <- reactive({ input$huc8_selected })
   
-  d_scene_selected <- reactive ({ input$d_secene_selected })
+  d_scene_selected <- reactive ({ input$d_scene_selected })
   
-  s_scene_selected <- reactive ({ input$s_secene_selected })
+  s_scene_selected <- reactive ({ input$s_scene_selected })
   
   priority_selected <- reactive({ input$priority_selected })
+  
+  plot_height <- reactive({
+    350 * length(d_scene_selected())
+  })
   
   ## Update selections. ----
   
@@ -177,39 +181,39 @@ server <- function(input, output, session) {                          # b server
   
   ## Build datasets. ----
   
-  # Supply exploration dataset.
+  # Supply exploration dataset. This is where the magic happens.
   plot_data <- reactive({
     bind_rows(filter(demand_selected(), 
-                                d_scenario %in% d_scene_selected()) %>% 
-                           mutate(fill_color = if_else(priority == "Statement Demand",
-                                                       "Statement Demand",
-                                                       if_else(priority == "Statement Demand",
-                                                               "Statement Demand",
-                                                               if_else(p_year >= priority_selected(),
-                                                                       "Junior Post-14", "Post-14"))),
-                                  fill_color = ordered(fill_color, levels = wa_demand_order)) %>% 
-                           group_by(d_scenario, plot_date, fill_color) %>% 
-                           summarise(af_day = sum(af_day, na.rm = TRUE),
-                                     cfs = sum(cfs, na.rm = TRUE),
-                                     .groups = "drop") %>% 
-                           mutate(plot_group = "demand",
-                                  s_scenario = NA) %>% 
-                           select(d_scenario, s_scenario, plot_date,
-                                  fill_color, af_day, cfs, plot_group), 
-                         filter(supply, huc8_name %in% huc8_selected(),
-                                s_scenario %in% s_scene_selected()) %>% 
-                           mutate(fill_color = NA,
-                                  plot_group = "supply") %>% 
-                           full_join(., 
-                                     as_tibble(d_scene_selected()), 
-                                     by = character()) %>% 
-                           select(d_scenario = value, 
-                                  s_scenario, 
-                                  plot_date, 
-                                  fill_color, 
-                                  af_day, 
-                                  cfs, 
-                                  plot_group))
+                     d_scenario %in% d_scene_selected()) %>% 
+                mutate(fill_color = if_else(priority == "Statement Demand",
+                                            "Statement Demand",
+                                            if_else(priority == "Statement Demand",
+                                                    "Statement Demand",
+                                                    if_else(p_year >= priority_selected(),
+                                                            "Junior Post-14", "Post-14"))),
+                       fill_color = ordered(fill_color, levels = wa_demand_order)) %>% 
+                group_by(d_scenario, plot_date, fill_color) %>% 
+                summarise(af_day = sum(af_day, na.rm = TRUE),
+                          cfs = sum(cfs, na.rm = TRUE),
+                          .groups = "drop") %>% 
+                mutate(plot_group = "demand",
+                       s_scenario = NA) %>% 
+                select(d_scenario, s_scenario, plot_date,
+                       fill_color, af_day, cfs, plot_group), 
+              filter(supply, huc8_name %in% huc8_selected(),
+                     s_scenario %in% s_scene_selected()) %>% 
+                mutate(fill_color = NA,
+                       plot_group = "supply") %>% 
+                full_join(., 
+                          as_tibble(d_scene_selected()), 
+                          by = character()) %>% 
+                select(d_scenario = value, 
+                       s_scenario, 
+                       plot_date, 
+                       fill_color, 
+                       af_day, 
+                       cfs, 
+                       plot_group))
   })
   
   ## Render outputs. ----
@@ -224,9 +228,52 @@ server <- function(input, output, session) {                          # b server
       # Demand.
       geom_area(data = subset(plot_data(), plot_group == "demand"),
                 position = "stack",
-                aes(fill = fill_color))
+                aes(fill = fill_color)) +
+      
+      # Supply.
+      geom_point(data = subset(plot_data(), plot_group == "supply"),
+                 aes(color = s_scenario,
+                     shape = s_scenario),
+                 size = 4) +
+      geom_line(data = subset(plot_data(), plot_group == "supply"),
+                aes(color = s_scenario)) +
+      
+      # # X axis.
+      # scale_x_date(date_labels = "%m/%d/%y",
+      #              date_minor_breaks = "1 month") +
+      
+      # Demand legend.
+      scale_fill_manual(name = "Demand Type:",
+                        values = wa_demand_pal,
+                        labels = c(paste(input$priority_selected, 
+                                         "& Junior Post-14 Demand"),
+                                   "Senior Post-14 Demand",
+                                   "Statement Demand")) +
+      
+      # Supply legend.
+      scale_shape_manual(name = "Supply Scenario:",
+                         values = wa_supply_shapes) +
+      scale_color_manual(name = "Supply Scenario:",
+                         values = wa_supply_pal) +
+      
+      # Facet on demand scenario.
+      facet_wrap(~ d_scenario, 
+                 ncol = 1) +
+      
+      # Labels.
+      labs(y = "Cubic Feet per Second (cfs)") +
+      
+      # Theme.
+      theme_bw() +
+      theme(# legend.position = "bottom",
+            strip.text.x = element_text(size = rel(1.5)),
+            axis.title = element_text(size = rel(1.2)),
+            axis.text = element_text(size = rel(1.2)),
+            legend.text = element_text(size = rel(1.2)),
+            legend.title = element_text(size = rel(1.2)),
+            axis.title.x = element_blank())
     
-  })
+  }, height = function() plot_height())
   
   output$random_plot <- renderPlot({
     random_ggplot()
