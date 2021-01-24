@@ -238,9 +238,9 @@ server <- function(input, output, session) {                          # b server
       geom_line(data = subset(plot_data(), plot_group == "supply"),
                 aes(color = s_scenario)) +
       
-      # # X axis.
-      # scale_x_date(date_labels = "%m/%d/%y",
-      #              date_minor_breaks = "1 month") +
+      # X axis.
+      scale_x_date(date_labels = "%m/%d/%y",
+                   date_minor_breaks = "1 month") +
       
       # Demand legend.
       scale_fill_manual(name = "Demand Type:",
