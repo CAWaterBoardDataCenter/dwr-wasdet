@@ -8,6 +8,7 @@ library(shinipsum)
 library(sf)
 library(leaflet)
 library(dplyr)
+library(scales)
 library(wesanderson)
 library(ggplot2)
 library(aws.s3)
@@ -169,10 +170,10 @@ server <- function(input, output, session) {                          # b server
   
   ## TESTING ELEMENTS. ----
   
-  observeEvent(input$s_scene_selected, {
-   # print(paste0("class: ", class(input$priority_selected)))
-    print(paste0("value: ", input$s_scene_selected))
- })
+  #  observeEvent(input$s_scene_selected, {
+  #   # print(paste0("class: ", class(input$priority_selected)))
+  #    print(paste0("value: ", input$s_scene_selected))
+  # })
   
   ## Update elements. ----
   
@@ -213,13 +214,13 @@ server <- function(input, output, session) {                          # b server
   py_choice_list <- reactive({
     sort(na.omit(unique(demand_selected()$p_year)), decreasing = TRUE)
   })
-  
   observeEvent(input$huc8_selected, {
     req(input$huc8_selected)
     choices <- py_choice_list()[py_choice_list() > min(py_choice_list())]
     updateSelectInput(session, "priority_selected",
                       choices = choices,
-                      selected = max(choices))
+                     # selected = max(choices),
+                      selected = 1958)
   })
   
   ## Build datasets. ----
@@ -289,16 +290,21 @@ server <- function(input, output, session) {                          # b server
         geom_line(data = subset(vsd_plot_data(), plot_group == "supply"),
                   aes(color = s_scenario)) +
         
-        # X axis.
+        # X axis format.
         scale_x_date(date_labels = "%m/%d/%y",
                      date_minor_breaks = "1 month") +
+        
+        # Y axis format.
+        scale_y_continuous(labels = comma) +
         
         # Demand legend.
         scale_fill_manual(name = "Demand Type:",
                           values = wa_demand_pal,
-                          labels = c(paste(priority_selected(), "& Junior Post-14 Demand"),
-                                     "XXXX & Senior Post-14 Demand",
-                                     "Statement Demand")) +
+                          labels = c(paste(priority_selected(), 
+                                           "& Junior Post-14 Demand"),
+                                     paste(as.numeric(priority_selected()) -1,
+                                           "& Senior Post-14 Demand"),
+                                           "Statement Demand")) +
         
         # Supply legend.
         scale_shape_manual(name = "Supply Scenario:",
