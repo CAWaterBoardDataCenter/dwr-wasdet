@@ -16,7 +16,7 @@ library(DT)
 ## Initialize values. ---
 
 # Data source.
-load_from_s3 <- TRUE
+load_from_s3 <- ifelse(Sys.info()["nodename"] == "Home-iMac.local", FALSE, TRUE)
 
 # Water availability demand type order.
 wa_demand_order <- ordered(c("Junior Post-14",
@@ -90,7 +90,7 @@ ui <- fluidPage(                                                   # b fluidPage
                                 label = "Select Visualization:",
                                 choices = c(
                                   "View Supply-Demand Scenarios" = "vsd",
-                                  "Demand By Priority (Placeholder)" = "vbp",
+                                  "View Demand By Priority (Placeholder)" = "vbp",
                                   "View Demand By Water Right Type (Placeholder)" = "vbwrt"),
                                 selected = "vsd"
                    ),
@@ -169,9 +169,10 @@ server <- function(input, output, session) {                          # b server
   
   ## TESTING ELEMENTS. ----
   
-  observeEvent(input$d_scene_selected, {
-    print(paste0("You have chosen: ", input$d_scene_selected))
-  })
+  observeEvent(input$s_scene_selected, {
+   # print(paste0("class: ", class(input$priority_selected)))
+    print(paste0("value: ", input$s_scene_selected))
+ })
   
   ## Update elements. ----
   
@@ -204,14 +205,18 @@ server <- function(input, output, session) {                          # b server
                                   huc8_name %in% huc8_selected())$s_scenario))
     updateSelectizeInput(session, "s_scene_selected",
                          choices = choices,
-                         selected = NULL)
+                         selected = c("Historic: Estimated Mean Unimpaired Flow at AMA, Wet Year",
+                                      "Historic: Estimated Mean Unimpaired Flow at AMA, Critical Year"))
   })
   
   # Update priority year choices.
+  py_choice_list <- reactive({
+    sort(na.omit(unique(demand_selected()$p_year)), decreasing = TRUE)
+  })
+  
   observeEvent(input$huc8_selected, {
     req(input$huc8_selected)
-    choices <- sort(na.omit(unique(demand_selected()$p_year)),
-                    decreasing = TRUE)
+    choices <- py_choice_list()[py_choice_list() > min(py_choice_list())]
     updateSelectInput(session, "priority_selected",
                       choices = choices,
                       selected = max(choices))
@@ -291,9 +296,8 @@ server <- function(input, output, session) {                          # b server
         # Demand legend.
         scale_fill_manual(name = "Demand Type:",
                           values = wa_demand_pal,
-                          labels = c(paste(input$priority_selected, 
-                                           "& Junior Post-14 Demand"),
-                                     "Senior Post-14 Demand",
+                          labels = c(paste(priority_selected(), "& Junior Post-14 Demand"),
+                                     "XXXX & Senior Post-14 Demand",
                                      "Statement Demand")) +
         
         # Supply legend.
@@ -304,7 +308,8 @@ server <- function(input, output, session) {                          # b server
         
         # Facet on demand scenario.
         facet_wrap(~ d_scenario, 
-                   ncol = 1) +
+                   ncol = 1,
+                   scales = "free_x") +
         
         # Labels.
         labs(y = "Cubic Feet per Second (cfs)") +
