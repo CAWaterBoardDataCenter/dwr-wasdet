@@ -16,7 +16,7 @@ library(DT)
 ## Initialize values. ---
 
 # Data source.
-load_from_s3 <- FALSE
+load_from_s3 <- TRUE
 
 # Water availability demand type order.
 wa_demand_order <- ordered(c("Junior Post-14",
