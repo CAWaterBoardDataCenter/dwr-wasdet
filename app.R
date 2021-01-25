@@ -16,7 +16,7 @@ library(DT)
 ## Initialize values. ---
 
 # Data source.
-load_from_s3 <- TRUE
+load_from_s3 <- FALSE
 
 # Water availability demand type order.
 wa_demand_order <- ordered(c("Junior Post-14",
@@ -81,7 +81,21 @@ ui <- fluidPage(                                                   # b fluidPage
     sidebarPanel(width = 3,                                     # b sidebarPanel
                  fluidRow(                                          # b fluidRow
                    
-                   ## Select HUC-8 watershed.
+                   # Quick description of 3 plot.
+                   random_text(nwords = 25),
+                   br(), br(),
+                   
+                   # Select Visualization to show.
+                   radioButtons(inputId = "plot_type_selected",
+                                label = "Select Visualization:",
+                                choices = c(
+                                  "View Supply-Demand Scenarios" = "vsd",
+                                  "Demand By Priority (Placeholder)" = "vbp",
+                                  "View Demand By Water Right Type (Placeholder)" = "vbwrt"),
+                                selected = "vsd"
+                   ),
+                   
+                   # Select HUC-8 watershed.
                    selectInput(inputId = "huc8_selected",
                                label = "Select HUC-8 Watershed:",
                                choices = sort(names(demand)),
@@ -90,7 +104,7 @@ ui <- fluidPage(                                                   # b fluidPage
                                multiple = FALSE
                    ),
                    
-                   ## Select demand scenario(s).
+                   # Select demand scenario(s).
                    selectizeInput(inputId = "d_scene_selected",
                                   label = "Select Up To Two Demand Scenarios:",
                                   choices = NULL,
@@ -121,7 +135,8 @@ ui <- fluidPage(                                                   # b fluidPage
     mainPanel(width = 9,                                           # b mainPanel
               
               h4("Demand in Selected Watershed"),
-              plotOutput(outputId = "sd_plot")
+              plotOutput(outputId = "main_plot"),
+              
               
     )                                                              # e mainPanel
     
@@ -144,8 +159,31 @@ server <- function(input, output, session) {                          # b server
   
   priority_selected <- reactive({ input$priority_selected })
   
+  plot_type_selected <- reactive({ input$plot_type_selected })
+  
   plot_height <- reactive({
-    350 * length(d_scene_selected())
+    ifelse(is.null(d_scene_selected()),
+           "auto",
+           350 * length(d_scene_selected()))
+  })
+  
+  ## TESTING ELEMENTS. ----
+  
+  observeEvent(input$d_scene_selected, {
+    print(paste0("You have chosen: ", input$d_scene_selected))
+  })
+  
+  ## Update elements. ----
+  
+  # Watch plot type radio buttons.
+  observe({
+    if(input$plot_type_selected != "vsd") {
+      hideElement(id = "s_scene_selected")
+      hideElement(id = "priority_selected")
+    } else {
+      showElement(id = "s_scene_selected")
+      showElement(id = "priority_selected")
+    }
   })
   
   ## Update selections. ----
@@ -182,7 +220,7 @@ server <- function(input, output, session) {                          # b server
   ## Build datasets. ----
   
   # Supply exploration dataset. This is where the magic happens.
-  plot_data <- reactive({
+  vsd_plot_data <- reactive({
     bind_rows(filter(demand_selected(), 
                      d_scenario %in% d_scene_selected()) %>% 
                 mutate(fill_color = if_else(priority == "Statement Demand",
@@ -218,62 +256,82 @@ server <- function(input, output, session) {                          # b server
   
   ## Render outputs. ----
   
-  # Supply-Demand plot.
-  output$sd_plot <- renderPlot({
+  # Main plot.
+  output$main_plot <- renderPlot({
     
-    ggplot(data = plot_data(),
-           aes(x = plot_date,
-               y = cfs)) +
-      
-      # Demand.
-      geom_area(data = subset(plot_data(), plot_group == "demand"),
-                position = "stack",
-                aes(fill = fill_color)) +
-      
-      # Supply.
-      geom_point(data = subset(plot_data(), plot_group == "supply"),
-                 aes(color = s_scenario,
-                     shape = s_scenario),
-                 size = 4) +
-      geom_line(data = subset(plot_data(), plot_group == "supply"),
-                aes(color = s_scenario)) +
-      
-      # X axis.
-      scale_x_date(date_labels = "%m/%d/%y",
-                   date_minor_breaks = "1 month") +
-      
-      # Demand legend.
-      scale_fill_manual(name = "Demand Type:",
-                        values = wa_demand_pal,
-                        labels = c(paste(input$priority_selected, 
-                                         "& Junior Post-14 Demand"),
-                                   "Senior Post-14 Demand",
-                                   "Statement Demand")) +
-      
-      # Supply legend.
-      scale_shape_manual(name = "Supply Scenario:",
-                         values = wa_supply_shapes) +
-      scale_color_manual(name = "Supply Scenario:",
-                         values = wa_supply_pal) +
-      
-      # Facet on demand scenario.
-      facet_wrap(~ d_scenario, 
-                 ncol = 1) +
-      
-      # Labels.
-      labs(y = "Cubic Feet per Second (cfs)") +
-      
-      # Theme.
-      theme_bw() +
-      theme(# legend.position = "bottom",
-            strip.text.x = element_text(size = rel(1.5)),
-            axis.title = element_text(size = rel(1.2)),
-            axis.text = element_text(size = rel(1.2)),
-            legend.text = element_text(size = rel(1.2)),
-            legend.title = element_text(size = rel(1.2)),
-            axis.title.x = element_blank())
+    # Validate.
+    validate(
+      need(input$d_scene_selected, 
+           "No data to plot.\nPlease slelect at least one Demand Scenario.")
+    )
     
-  }, height = function() plot_height())
+    # View Supply and Demand (vsd).
+    if (input$plot_type_selected == "vsd") {
+      ggplot(data = vsd_plot_data(),
+             aes(x = plot_date,
+                 y = cfs)) +
+        
+        # Demand.
+        geom_area(data = subset(vsd_plot_data(), plot_group == "demand"),
+                  position = "stack",
+                  aes(fill = fill_color)) +
+        
+        # Supply.
+        geom_point(data = subset(vsd_plot_data(), plot_group == "supply"),
+                   aes(color = s_scenario,
+                       shape = s_scenario),
+                   size = 4) +
+        geom_line(data = subset(vsd_plot_data(), plot_group == "supply"),
+                  aes(color = s_scenario)) +
+        
+        # X axis.
+        scale_x_date(date_labels = "%m/%d/%y",
+                     date_minor_breaks = "1 month") +
+        
+        # Demand legend.
+        scale_fill_manual(name = "Demand Type:",
+                          values = wa_demand_pal,
+                          labels = c(paste(input$priority_selected, 
+                                           "& Junior Post-14 Demand"),
+                                     "Senior Post-14 Demand",
+                                     "Statement Demand")) +
+        
+        # Supply legend.
+        scale_shape_manual(name = "Supply Scenario:",
+                           values = wa_supply_shapes) +
+        scale_color_manual(name = "Supply Scenario:",
+                           values = wa_supply_pal) +
+        
+        # Facet on demand scenario.
+        facet_wrap(~ d_scenario, 
+                   ncol = 1) +
+        
+        # Labels.
+        labs(y = "Cubic Feet per Second (cfs)") +
+        
+        # Theme.
+        theme_bw() +
+        theme(# legend.position = "bottom",
+          strip.text.x = element_text(size = rel(1.5)),
+          axis.title = element_text(size = rel(1.2)),
+          axis.text = element_text(size = rel(1.2)),
+          legend.text = element_text(size = rel(1.2)),
+          legend.title = element_text(size = rel(1.2)),
+          axis.title.x = element_blank())
+      
+    } else if (input$plot_type_selected == "vbwrt") {
+      
+      # Demand by water right type.
+      random_ggplot()
+    } else if (input$plot_type_selected == "vbp") {
+      
+      # Demand by priority.
+      random_ggplot()
+    }
+    
+  }, height = function() plot_height()
+  )
+  
   
   output$random_plot <- renderPlot({
     random_ggplot()
