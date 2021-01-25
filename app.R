@@ -89,9 +89,9 @@ ui <- fluidPage(                                                   # b fluidPage
                    radioButtons(inputId = "plot_type_selected",
                                 label = "Select Visualization:",
                                 choices = c(
-                                  "View Supplies" = "vsd",
-                                  "Demand By Water Right Type" = "vbwrt",
-                                  "Demand By Priority" = "vbp"),
+                                  "View Supply-Demand Scenarios" = "vsd",
+                                  "Demand By Priority (Placeholder)" = "vbp",
+                                  "View Demand By Water Right Type (Placeholder)" = "vbwrt"),
                                 selected = "vsd"
                    ),
                    
@@ -135,7 +135,8 @@ ui <- fluidPage(                                                   # b fluidPage
     mainPanel(width = 9,                                           # b mainPanel
               
               h4("Demand in Selected Watershed"),
-              plotOutput(outputId = "main_plot")
+              plotOutput(outputId = "main_plot"),
+              
               
     )                                                              # e mainPanel
     
@@ -158,10 +159,18 @@ server <- function(input, output, session) {                          # b server
   
   priority_selected <- reactive({ input$priority_selected })
   
+  plot_type_selected <- reactive({ input$plot_type_selected })
+  
   plot_height <- reactive({
-    ifelse(input$plot_type_selected == "vsd",
-           350 * length(d_scene_selected()),
-           "auto")
+    ifelse(is.null(d_scene_selected()),
+           "auto",
+           350 * length(d_scene_selected()))
+  })
+  
+  ## TESTING ELEMENTS. ----
+  
+  observeEvent(input$d_scene_selected, {
+    print(paste0("You have chosen: ", input$d_scene_selected))
   })
   
   ## Update elements. ----
@@ -250,6 +259,12 @@ server <- function(input, output, session) {                          # b server
   # Main plot.
   output$main_plot <- renderPlot({
     
+    # Validate.
+    validate(
+      need(input$d_scene_selected, 
+           "No data to plot.\nPlease slelect at least one Demand Scenario.")
+    )
+    
     # View Supply and Demand (vsd).
     if (input$plot_type_selected == "vsd") {
       ggplot(data = vsd_plot_data(),
@@ -314,7 +329,8 @@ server <- function(input, output, session) {                          # b server
       random_ggplot()
     }
     
-  }, height = function() plot_height())
+  }, height = function() plot_height()
+  )
   
   
   output$random_plot <- renderPlot({
