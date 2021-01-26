@@ -63,7 +63,7 @@ wa_demand_pal <- wes_palettes$GrandBudapest1[c(2, 1, 4, 3)]
 names(wa_demand_pal) <- wa_demand_order
 
 # Supply.
-wa_supply_pal <- colorRampPalette(wes_palette("Zissou1")[1:2])(3)
+wa_supply_pal <- colorRampPalette(wes_palette("Rushmore")[3:4])(3)
 wa_supply_shapes <- c(15, 16, 17)
 
 ### UI -------------------------------------------------------------------------
@@ -321,9 +321,10 @@ server <- function(input, output, session) {                          # b server
         geom_point(data = subset(vsd_plot_data(), plot_group == "supply"),
                    aes(color = s_scenario,
                        shape = s_scenario),
-                   size = 4) +
+                   size = 7) +
         geom_line(data = subset(vsd_plot_data(), plot_group == "supply"),
-                  aes(color = s_scenario)) +
+                  aes(color = s_scenario),
+                  linetype = "dashed") +
         
         # X axis format.
         scale_x_date(date_labels = "%m/%d/%y",
