@@ -99,9 +99,8 @@ ui <- fluidPage(                                                   # b fluidPage
                    # Select HUC-8 watershed.
                    selectInput(inputId = "huc8_selected",
                                label = "Select HUC-8 Watershed:",
-                               choices = sort(names(demand)),
-                               # selected = sample(unique(names(demand)), 1),
-                               selected = "North Fork American",
+                               choices = NULL,
+                               selected = NULL,
                                multiple = FALSE
                    ),
                    
@@ -190,11 +189,27 @@ server <- function(input, output, session) {                          # b server
   
   ## Update selections. ----
   
+  # if plot_type is vsd, filter available HUC8s to those with corresponding
+  # supply data.  sort(names(demand))
+  observeEvent(input$plot_type_selected, {
+    req(plot_type_selected)
+    if (input$plot_type_selected != "vsd") {
+      choices <- sort(names(demand))
+    } else {
+      choices <- sort(subset(names(demand), names(demand) %in% supply$huc8_name))
+    }
+    updateSelectInput(session, 
+                      inputId = "huc8_selected",
+                         choices = choices,
+                         selected = "North Fork American")
+  })
+  
   # Update demand scenario choices.
   observeEvent(input$huc8_selected, {
     req(input$huc8_selected)
     choices <- sort(unique(demand_selected()$d_scenario))
-    updateSelectizeInput(session, "d_scene_selected",
+    updateSelectizeInput(session, 
+                         inputId = "d_scene_selected",
                          choices = choices,
                          selected = "Reported Diversions - 2019")
   })
@@ -227,37 +242,45 @@ server <- function(input, output, session) {                          # b server
   
   # Supply exploration dataset. This is where the magic happens.
   vsd_plot_data <- reactive({
-    bind_rows(filter(demand_selected(), 
-                     d_scenario %in% d_scene_selected()) %>% 
-                mutate(fill_color = if_else(priority == "Statement Demand",
-                                            "Statement Demand",
-                                            if_else(priority == "Statement Demand",
-                                                    "Statement Demand",
-                                                    if_else(p_year >= priority_selected(),
-                                                            "Junior Post-14", "Post-14"))),
-                       fill_color = ordered(fill_color, levels = wa_demand_order)) %>% 
-                group_by(d_scenario, plot_date, fill_color) %>% 
-                summarise(af_day = sum(af_day, na.rm = TRUE),
-                          cfs = sum(cfs, na.rm = TRUE),
-                          .groups = "drop") %>% 
-                mutate(plot_group = "demand",
-                       s_scenario = NA) %>% 
-                select(d_scenario, s_scenario, plot_date,
-                       fill_color, af_day, cfs, plot_group), 
-              filter(supply, huc8_name %in% huc8_selected(),
-                     s_scenario %in% s_scene_selected()) %>% 
-                mutate(fill_color = NA,
-                       plot_group = "supply") %>% 
-                full_join(., 
-                          as_tibble(d_scene_selected()), 
-                          by = character()) %>% 
-                select(d_scenario = value, 
-                       s_scenario, 
-                       plot_date, 
-                       fill_color, 
-                       af_day, 
-                       cfs, 
-                       plot_group))
+    bind_rows(
+      {
+        # Demand.
+        filter(demand_selected(), 
+               d_scenario %in% d_scene_selected()) %>% 
+          mutate(fill_color = if_else(priority == "Statement Demand",
+                                      "Statement Demand",
+                                      if_else(priority == "Statement Demand",
+                                              "Statement Demand",
+                                              if_else(p_year >= priority_selected(),
+                                                      "Junior Post-14", "Post-14"))),
+                 fill_color = ordered(fill_color, levels = wa_demand_order)) %>% 
+          group_by(d_scenario, plot_date, fill_color) %>% 
+          summarise(af_day = sum(af_day, na.rm = TRUE),
+                    cfs = sum(cfs, na.rm = TRUE),
+                    .groups = "drop") %>% 
+          mutate(plot_group = "demand",
+                 s_scenario = NA) %>% 
+          select(d_scenario, s_scenario, plot_date,
+                 fill_color, af_day, cfs, plot_group)
+      }, 
+      {
+        # Supply.
+        filter(supply, huc8_name %in% huc8_selected(),
+               s_scenario %in% s_scene_selected()) %>% 
+          mutate(fill_color = NA,
+                 plot_group = "supply") %>% 
+          full_join(., 
+                    as_tibble(d_scene_selected()), 
+                    by = character()) %>% 
+          select(d_scenario = value, 
+                 s_scenario, 
+                 plot_date, 
+                 fill_color, 
+                 af_day, 
+                 cfs, 
+                 plot_group)
+      }
+    )
   })
   
   ## Render outputs. ----
