@@ -11,6 +11,7 @@ library(dplyr)
 library(scales)
 library(wesanderson)
 library(ggplot2)
+library(plotly)
 library(aws.s3)
 library(DT)
 
@@ -82,10 +83,6 @@ ui <- fluidPage(                                                   # b fluidPage
     sidebarPanel(width = 3,                                     # b sidebarPanel
                  fluidRow(                                          # b fluidRow
                    
-                   # Quick description of 3 plot.
-                   random_text(nwords = 25),
-                   br(), br(),
-                   
                    # Select Visualization to show.
                    radioButtons(inputId = "plot_type_selected",
                                 label = "Select Visualization:",
@@ -103,6 +100,8 @@ ui <- fluidPage(                                                   # b fluidPage
                                selected = NULL,
                                multiple = FALSE
                    ),
+                   p("When 'View Supply-Demand Scenarios' is selected, only those watersheds with available Supply Scenarios are available to select from."),
+                   br(),
                    
                    # Select demand scenario(s).
                    selectizeInput(inputId = "d_scene_selected",
@@ -127,15 +126,22 @@ ui <- fluidPage(                                                   # b fluidPage
                                label = "Select Demand Priority Year to Slice:",
                                choices = NULL,
                                selected = NULL,
-                               multiple = FALSE)
+                               multiple = FALSE),
+                   
+                   ## My logos !!
+                   br(),br(),br(),
+                   HTML('<center><p>Built with</p>
+                      <p><img src="shiny.png", height = "50">
+                      and <img src="RStudio.png", height = "50">
+                      by <img src="jgy_hex.png", height = "50"></p></center>')
                    
                  )                                                  # e fluidRow
     ),                                                          # e sidebarPanel
     
     mainPanel(width = 9,                                           # b mainPanel
               
-              h4("Demand in Selected Watershed"),
-              plotOutput(outputId = "main_plot"),
+              # h4("Demand in Selected Watershed"),
+              plotOutput(outputId = "main_plot")
               
               
     )                                                              # e mainPanel
@@ -161,10 +167,16 @@ server <- function(input, output, session) {                          # b server
   
   plot_type_selected <- reactive({ input$plot_type_selected })
   
+  # plot_height <- reactive({
+  #   ifelse(is.null(d_scene_selected()),
+  #          "auto",
+  #          (350 * length(d_scene_selected())) + 50)
+  # })
+  
   plot_height <- reactive({
-    ifelse(is.null(d_scene_selected()),
-           "auto",
-           350 * length(d_scene_selected()))
+    ifelse(length(d_scene_selected()) == 1, 480,
+           ifelse(length(d_scene_selected()) == 2, 835, "auto"))
+           
   })
   
   ## TESTING ELEMENTS. ----
@@ -341,17 +353,24 @@ server <- function(input, output, session) {                          # b server
                    scales = "free_x") +
         
         # Labels.
-        labs(y = "Cubic Feet per Second (cfs)") +
+        labs(title = "Plot Title Placeholder",
+             y = "Cubic Feet per Second (cfs)") +
         
         # Theme.
-        theme_bw() +
-        theme(# legend.position = "bottom",
-          strip.text.x = element_text(size = rel(1.5)),
+        theme_minimal() +
+        theme(
+          plot.title = element_text(size = rel(2.0)),
+          strip.text.x = element_text(size = rel(2.0)),
           axis.title = element_text(size = rel(1.2)),
           axis.text = element_text(size = rel(1.2)),
           legend.text = element_text(size = rel(1.2)),
           legend.title = element_text(size = rel(1.2)),
-          axis.title.x = element_blank())
+          legend.position = "bottom",
+          legend.box = "horizontal",
+          legend.direction = "vertical",
+          panel.spacing = unit(2, "lines"),
+          axis.title.x = element_blank()
+          )
       
     } else if (input$plot_type_selected == "vbwrt") {
       
