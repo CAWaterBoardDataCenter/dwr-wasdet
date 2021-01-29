@@ -100,10 +100,10 @@ supply_create_date <- Sys.Date()
 save(supply,
      supply_create_date,
      file = "./output/dwast-supplies.RData")
-# put_object(file = "./output/dwast-supplies.RData", 
-#            object = "dwast-supplies.RData", 
-#            bucket = "dwr-enf-shiny",
-#            multipart = TRUE)
+put_object(file = "./output/dwast-supplies.RData",
+           object = "dwast-supplies.RData",
+           bucket = "dwr-enf-shiny",
+           multipart = TRUE)
 
 
 

@@ -153,10 +153,10 @@ demand_create_date <- Sys.Date()
 save(demand,
      demand_create_date,
      file = "./output/dwast-demands.RData")
-# put_object(file = "./output/dwast-demands.RData", 
-#           object = "dwast-demands.RData", 
-#           bucket = "dwr-enf-shiny",
-#           multipart = TRUE)
+put_object(file = "./output/dwast-demands.RData",
+          object = "dwast-demands.RData",
+          bucket = "dwr-enf-shiny",
+          multipart = TRUE)
 
 
 
