@@ -79,7 +79,7 @@ demand <- split(x = diversions,
 
 
 
- demand <- demand[grepl("^N", names(demand))]
+demand <- demand[grepl("^N", names(demand))]
 #^^^^^^^^^^^^^^^^^^^^ REMOVE AFTER TESTING
 
 demand <- future_map(.x = demand,
@@ -92,24 +92,15 @@ demand <- future_map(.x = demand,
 # Aggregate diversions by water right id. 
 agg_dem_wrid <- function(x) {
   x <- x %>% 
-    group_by(d_scenario,
-             wr_id,
-             owner,
-             wr_type,
-             wr_status,
-             wr_class, 
-             priority,
-           #  demand_wt,
-             rept_month) %>% 
-    summarise(af_monthly = sum(amount, na.rm = TRUE) * demand_wt,
-              .groups = "drop") %>% 
-    arrange(d_scenario, 
-            wr_id, 
-            rept_month) %>% 
-    drop_na()
+    rowwise() %>% 
+    group_by(d_scenario, wr_id, rept_month) %>% 
+    mutate(af_monthly = sum(af_monthly, na.rm = TRUE) * demand_wt) %>% 
+    select(-diversion_type) %>% 
+    distinct() %>% 
+    ungroup()
 }
 demand <- future_map(.x = demand,
-              .f = agg_dem_wrid)
+                     .f = agg_dem_wrid)
 
 ## Demands are AF/month. Plots will be on a daily time step. Calculate daily AF
 ## and month-averaged cfs. Map to date time series with project_year.
@@ -146,7 +137,7 @@ demand <- future_map(.x = demand,
               .f = make_daily_demands,
               .progress = TRUE)
 
-# Make p_year column. Introduces NAs by coercion, but that's ok.
+# Make p_year column from which to select priority year to slice.
 make_numeric_priority <- function(x) {
   x <- x %>% 
     # Check that it doesn't match any non-number

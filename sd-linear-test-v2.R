@@ -218,10 +218,6 @@ vsd_plot_data <- bind_rows(
 
 ## vsd plot. ----
 
-pd_sub <- subset(plot_demand, plot_group == "demand") %>% 
-  arrange(plot_date, d_scenario, source)
-## Render plot. ----
-
 ggplot(data = vsd_plot_data,
             aes(x = plot_date,
                 y = cfs)) +
