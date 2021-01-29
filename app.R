@@ -1,19 +1,48 @@
 ### INITIALIZATION -------------------------------------------------------------
 
-# Load libraries.
-library(shiny)
-library(shinythemes)
-library(shinyjs)
-library(shinipsum)
-library(sf)
-library(leaflet)
-library(dplyr)
-library(scales)
-library(wesanderson)
-library(ggplot2)
-library(plotly)
-library(aws.s3)
-library(DT)
+## Load libraries. ----
+if(!("package:shiny" %in% search())) {
+  suppressMessages(library(shiny))
+}
+if(!("package:shinythemes" %in% search())) {
+  suppressMessages(library(shinythemes))
+}
+if(!("package:shinyjs" %in% search())) {
+  suppressMessages(library(shinyjs))
+}
+if(!("package:shinipsum" %in% search())) {
+  suppressMessages(library(shinipsum))
+}
+if(!("package:dplyr" %in% search())) {
+  suppressMessages(library(dplyr))
+}
+if(!("package:lubridate" %in% search())) {
+  suppressMessages(library(lubridate))
+}
+if(!("package:wesanderson" %in% search())) {
+  suppressMessages(library(wesanderson))
+}
+if(!("package:janitor" %in% search())) {
+  suppressMessages(library(janitor))
+}
+if(!("package:ggplot2" %in% search())) {
+  suppressMessages(library(ggplot2))
+}
+if(!("package:sf" %in% search())) {
+  suppressMessages(library(sf))
+}
+if(!("package:leaflet" %in% search())) {
+  suppressMessages(library(leaflet))
+}
+if(!("package:scales" %in% search())) {
+  suppressMessages(library(scales))
+}
+if(!("package:aws.s3" %in% search())) {
+  suppressMessages(library(aws.s3))
+}
+if(!("package:DT" %in% search())) {
+  suppressMessages(library(DT))
+}
 
 ## Initialize values. ---
 
@@ -45,7 +74,7 @@ if(load_from_s3) {
   load("./output/dwast-wrinfo.RData")
   
   # Demand data.
-  load("./output/dwast-demands-test-set.RData")
+  load("./output/dwast-demands.RData")
   
   # Supply data.
   load("./output/dwast-supplies.RData")
@@ -100,7 +129,7 @@ ui <- fluidPage(                                                   # b fluidPage
                                selected = NULL,
                                multiple = FALSE
                    ),
-                   p("When 'View Supply-Demand Scenarios' is selected, only those watersheds with available Supply Scenarios are available to select from."),
+                   p("When 'View Supply-Demand Scenarios' is selected, only those watersheds with available Supply Scenarios are selectable."),
                    br(),
                    
                    # Select demand scenario(s).
@@ -155,24 +184,18 @@ ui <- fluidPage(                                                   # b fluidPage
 
 server <- function(input, output, session) {                          # b server
   
+  ## SETUP. ----
+  
+  # Convert input values to reactive variables.
   demand_selected <- reactive({ demand[[input$huc8_selected]] })
-  
   huc8_selected <- reactive({ input$huc8_selected })
-  
   d_scene_selected <- reactive ({ input$d_scene_selected })
-  
   s_scene_selected <- reactive ({ input$s_scene_selected })
-  
   priority_selected <- reactive({ input$priority_selected })
-  
   plot_type_selected <- reactive({ input$plot_type_selected })
   
-  # plot_height <- reactive({
-  #   ifelse(is.null(d_scene_selected()),
-  #          "auto",
-  #          (350 * length(d_scene_selected())) + 50)
-  # })
-  
+  # Define plot height function to keep facet panels roghly the same height
+  # wheter displaying one or two.
   plot_height <- reactive({
     ifelse(length(d_scene_selected()) == 1, 480,
            ifelse(length(d_scene_selected()) == 2, 835, "auto"))
@@ -257,39 +280,57 @@ server <- function(input, output, session) {                          # b server
     bind_rows(
       {
         # Demand.
+        # Demand.
         filter(demand_selected(), 
-               d_scenario %in% d_scene_selected()) %>% 
+               d_scenario %in% d_scene_selected()) %>%
           mutate(fill_color = if_else(priority == "Statement Demand",
                                       "Statement Demand",
                                       if_else(priority == "Statement Demand",
                                               "Statement Demand",
                                               if_else(p_year >= priority_selected(),
                                                       "Junior Post-14", "Post-14"))),
-                 fill_color = ordered(fill_color, levels = wa_demand_order)) %>% 
-          group_by(d_scenario, plot_date, fill_color) %>% 
-          summarise(af_day = sum(af_day, na.rm = TRUE),
+                 fill_color = ordered(fill_color, levels = wa_demand_order)) %>%
+          group_by(d_scenario, plot_date, fill_color) %>%
+          summarise(af_monthly = sum(af_monthly, na.rm = TRUE),
+                    af_daily = sum(af_daily, na.rm = TRUE),
                     cfs = sum(cfs, na.rm = TRUE),
                     .groups = "drop") %>% 
           mutate(plot_group = "demand",
-                 s_scenario = NA) %>% 
-          select(d_scenario, s_scenario, plot_date,
-                 fill_color, af_day, cfs, plot_group)
+                 s_scenario = NA) %>%
+          select(d_scenario, 
+                 s_scenario, 
+                 plot_date,
+                 fill_color, 
+                 af_monthly,
+                 af_daily, 
+                 cfs, 
+                 plot_group) %>% 
+          # Add boundary points to facilitate barplot vis and correct stacking.
+          bind_rows(old = .,
+                    new = mutate(., 
+                                 plot_date = ceiling_date(x = plot_date,
+                                                          unit = "month") - 1),
+                    .id = "source") %>% 
+          arrange(plot_date, source)
       }, 
       {
         # Supply.
         filter(supply, huc8_name %in% huc8_selected(),
-               s_scenario %in% s_scene_selected()) %>% 
-          mutate(fill_color = NA,
-                 plot_group = "supply") %>% 
-          full_join(., 
-                    as_tibble(d_scene_selected()), 
-                    by = character()) %>% 
-          select(d_scenario = value, 
-                 s_scenario, 
-                 plot_date, 
-                 fill_color, 
-                 af_day, 
-                 cfs, 
+               s_scenario %in% s_scene_selected()) %>%
+          mutate(source = "old",
+                 fill_color = NA,
+                 plot_group = "supply") %>%
+          full_join(.,
+                    as_tibble(d_scene_selected()),
+                    by = character()) %>%
+          select(source,
+                 d_scenario = value,
+                 s_scenario,
+                 plot_date,
+                 fill_color,
+                 af_monthly,
+                 af_daily,
+                 cfs,
                  plot_group)
       }
     )

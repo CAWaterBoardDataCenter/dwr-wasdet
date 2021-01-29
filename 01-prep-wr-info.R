@@ -32,10 +32,10 @@ if(!("package:aws.s3" %in% search())) {
 ### Initialization. ----
 
 ## Switches.
-download_new_wrinfo <- FALSE
-download_new_pods <- FALSE
-save_data_gaps <- FALSE
-report_multi_hucs <- FALSE
+download_new_wrinfo <- TRUE
+download_new_pods <- TRUE
+save_data_gaps <- TRUE
+report_multi_hucs <- TRUE
 
 ## Create project folders if they don't exist.  <-- purrr this!
 

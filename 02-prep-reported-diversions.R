@@ -24,10 +24,6 @@ project_year <- 2021
 
 # Define variables.
 
-# demand_order <- ordered(c("Selected Priority and Junior",
-#                           "Post-14",
-#                           "Statement Demand",
-#                           "Environmental Demand"))
 priority_order <- c(c(year(now()):1914),  
                     "Statement Demand", 
                     "Environmental Demand")
