@@ -43,7 +43,8 @@ supply_hist_stats_raw <- read_csv(file = "./supply-data/SupplyData_Stats.csv",
 supply_hist_stats <- supply_hist_stats_raw %>%
   select(-wy_mo) %>% 
   rename(huc8_name = huc8,
-         rept_month = cy_mo) %>% 
+         rept_month = cy_mo,
+         af_monthly = af) %>% 
   filter(stat %in% c("mean", "median", "p10", "p90"))
 
 # Build scenario descriptions.
@@ -66,7 +67,7 @@ supply_hist_stats <- supply_hist_stats %>%
   select(huc8_name, 
          s_scenario,
          rept_month,
-         af,
+         af_monthly,
          cfs) %>% 
   arrange(huc8_name, s_scenario, rept_month) %>% 
   drop_na()
@@ -78,47 +79,51 @@ supply_hist_stats <- supply_hist_stats %>%
 
 # Convert af to af/day.
 supply_hist_stats <- supply_hist_stats %>% 
-  mutate(af_day = af / as.numeric(days_in_month(plot_date))) %>% 
+  mutate(af_daily = af_monthly / as.numeric(days_in_month(plot_date))) %>% 
   select(huc8_name,
          s_scenario,
          plot_date,
-         af_day,
+         af_monthly,
+         af_daily,
          cfs) %>% 
   arrange(huc8_name,
           s_scenario,
           plot_date)
 
-## Combine supply sources.
+## Combine supply sources. Add historic years?
 supply <- bind_rows(supply_hist_stats)
 
 ## Save data files locally and to S3 bucket. ----
 
-# Save to S3 for Shiny app to pick up.
+# Save locally and to to S3 for dashboard to pick up.
 supply_create_date <- Sys.Date()
 save(supply,
      supply_create_date,
      file = "./output/dwast-supplies.RData")
-put_object(file = "./output/dwast-supplies.RData", 
-           object = "dwast-supplies.RData", 
-           bucket = "dwr-enf-shiny",
-           multipart = TRUE)
+# put_object(file = "./output/dwast-supplies.RData", 
+#            object = "dwast-supplies.RData", 
+#            bucket = "dwr-enf-shiny",
+#            multipart = TRUE)
 
 
-# Explore a plot.
-# library(ggplot2)
-# 
-# huc8_selected <- "McCloud"
-# supply_selected <- supply_hist_stats %>% 
-#   filter(huc8_name %in% huc8_selected)
-# 
-# ggplot(data = supply_selected,
-#        aes(x = plot_date, y = cfs)) +
-#   geom_rect(aes(xmin = plot_date - 10, 
-#                 ymin = cfs - 0.005 * max(cfs), 
-#                 xmax = plot_date + 10, 
-#                 ymax = cfs + 0.005 * max(cfs), 
-#                 fill = s_scenario)) +
-#   geom_line(aes(color = s_scenario))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

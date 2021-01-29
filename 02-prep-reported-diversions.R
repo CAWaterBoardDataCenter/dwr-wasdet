@@ -24,10 +24,6 @@ project_year <- 2021
 
 # Define variables.
 
-demand_order <- ordered(c("Selected Priority and Junior",
-                          "Post-14",
-                          "Statement Demand",
-                          "Environmental Demand"))
 priority_order <- c(c(year(now()):1914),  
                     "Statement Demand", 
                     "Environmental Demand")
@@ -55,6 +51,7 @@ diversions <- diversions_raw %>% clean_names() %>%
   select(d_scenario = year,
          wr_id = appl_id,
          rept_month = month,
+         af_monthly = amount,
          everything(),
          -water_right_id) %>% 
   filter(d_scenario >= 2011)
@@ -66,8 +63,11 @@ diversions <- diversions %>%
 # join wr_info.
 diversions <- diversions %>% 
   left_join(., select(wr_info,
+                      huc8_name,
                       wr_id, 
-                      huc8_name, 
+                      owner,
+                      wr_type,
+                      wr_status,
                       wr_class, 
                       priority,
                       demand_wt), 
@@ -81,64 +81,67 @@ demand <- future_map(.x = demand,
 
 # Scale diversion amounts by HUC-8 weighting factor.
 demand <- future_map(.x = demand,
-              .f = ~mutate(., amount_weighted = amount * demand_wt))
+              .f = ~mutate(., af_monthly = af_monthly * demand_wt))
 
-# Aggregate diversions by huc8_name and priority. 
-agg_huc_pri <- function(x) {
+# Aggregate diversions by water right id. 
+agg_dem_wrid <- function(x) {
   x <- x %>% 
-    group_by(d_scenario,
-             priority, 
-             rept_month) %>% 
-    summarise(demand = sum(amount_weighted, na.rm = TRUE),
-              .groups = "drop") %>% 
-    arrange(d_scenario, 
-            priority, 
-            rept_month) %>% 
-    drop_na()
+    rowwise() %>% 
+    group_by(d_scenario, wr_id, rept_month) %>% 
+    mutate(af_monthly = sum(af_monthly, na.rm = TRUE) * demand_wt) %>% 
+    select(-diversion_type) %>% 
+    distinct() %>% 
+    ungroup()
 }
 demand <- future_map(.x = demand,
-              .f = agg_huc_pri)
+                     .f = agg_dem_wrid)
 
-## Demands are AF/month. Plots will be on a daily time step. Convert to AF/day.
-## map to daily time series with project_year.
+## Demands are AF/month. Plots will be on a daily time step. Calculate 
+## month-averaged daily AF and cfs. Map to date time series with project_year.
 
 # Create vector containing series of dates for project year.
-months_to_dates <- tibble(plot_date = seq(as.Date(paste0(project_year, 
-                                                         "-01-01")),
-                                          as.Date(paste0(project_year, 
-                                                         "-12-31")),
-                                          by = "days"),
-                          rept_month = as.numeric(month(plot_date)))
+dates_to_map <- tibble(plot_date = seq(as.Date(paste0(project_year, 
+                                                      "-01-01")),
+                                       as.Date(paste0(project_year, 
+                                                      "-12-31")),
+                                       by = "month"),
+                       rept_month = as.numeric(month(plot_date)))
 
 make_daily_demands <- function(x) {
   x <- x %>% 
-    right_join(., months_to_dates, by = "rept_month") %>%
-    mutate(af_day = demand / as.numeric(days_in_month(plot_date)),
-           cfs = af_day * 0.504166667) %>% 
+    right_join(., dates_to_map, by = "rept_month") %>%
+    mutate(af_daily = af_monthly / as.numeric(days_in_month(plot_date)),
+           cfs = af_daily * 0.504166667) %>% 
     select(d_scenario,
-           plot_date, 
-           priority, 
-           af_day,
+           wr_id,
+           owner,
+           wr_type,
+           wr_status,
+           wr_class, 
+           priority,
+           plot_date,
+           af_monthly,
+           af_daily,
            cfs) %>% 
     arrange(d_scenario,
             plot_date, 
-            priority, 
-            af_day,
-            cfs)
+            priority)
 }
 demand <- future_map(.x = demand,
-              .f = make_daily_demands,
-              .progress = TRUE)
+                     .f = make_daily_demands,
+                     .progress = TRUE)
 
 # Make p_year column. Introduces NAs by coercion, but that's ok.
 make_numeric_priority <- function(x) {
   x <- x %>% 
-    mutate(p_year = ifelse(!is.na(as.numeric(priority)), 
-                           as.numeric(priority),
+    # Check that it doesn't match any non-number
+    #  numbers_only <- function(x) !grepl("\\D", x)
+    mutate(p_year = ifelse(!grepl("\\D", .$priority), 
+                           suppressWarnings(as.numeric(priority)),
                            NA))
 }
 demand <- map(.x = demand,
-                   .f = make_numeric_priority)
+              .f = make_numeric_priority)
 
 # Kill parallel R sessions. 
 plan(sequential)
@@ -150,7 +153,62 @@ demand_create_date <- Sys.Date()
 save(demand,
      demand_create_date,
      file = "./output/dwast-demands.RData")
-put_object(file = "./output/dwast-demands.RData", 
-          object = "dwast-demands.RData", 
-          bucket = "dwr-enf-shiny",
-          multipart = TRUE)
+# put_object(file = "./output/dwast-demands.RData", 
+#           object = "dwast-demands.RData", 
+#           bucket = "dwr-enf-shiny",
+#           multipart = TRUE)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
