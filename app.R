@@ -44,6 +44,13 @@ if(!("package:DT" %in% search())) {
   suppressMessages(library(DT))
 }
 
+##### DEBUG #####
+if(!("package:reactlog" %in% search())) {
+  suppressMessages(library(reactlog))
+}
+reactlog_enable()
+
+
 ## Initialize values. ---
 
 # Data source.
@@ -101,7 +108,7 @@ ui <- fluidPage(                                                   # b fluidPage
   useShinyjs(),
   
   # Set theme.
-  theme = shinytheme("cerulean"),
+#  theme = shinytheme("cerulean"),
   
   # Dashboard Title
   titlePanel(title = div(img(src = "DWR-ENF-Logo-48px.png"), 
@@ -125,8 +132,8 @@ ui <- fluidPage(                                                   # b fluidPage
                    # Select HUC-8 watershed.
                    selectInput(inputId = "huc8_selected",
                                label = "Select HUC-8 Watershed:",
-                               choices = NULL,
-                               selected = NULL,
+                               choices = sort(names(demand)),
+                               selected = "North Fork American",
                                multiple = FALSE
                    ),
                    p("When 'View Supply-Demand Scenarios' is selected, only those watersheds with available Supply Scenarios are selectable."),
@@ -187,27 +194,21 @@ server <- function(input, output, session) {                          # b server
   ## SETUP. ----
   
   # Convert input values to reactive variables.
-  demand_selected <- reactive({ demand[[input$huc8_selected]] })
-  huc8_selected <- reactive({ input$huc8_selected })
-  d_scene_selected <- reactive ({ input$d_scene_selected })
-  s_scene_selected <- reactive ({ input$s_scene_selected })
-  priority_selected <- reactive({ input$priority_selected })
-  plot_type_selected <- reactive({ input$plot_type_selected })
+  # demand_selected <- reactive({ demand[[input$huc8_selected]] })
+  # huc8_selected <- reactive({ input$huc8_selected })
+  # d_scene_selected <- reactive ({ input$d_scene_selected })
+  # s_scene_selected <- reactive ({ input$s_scene_selected })
+  # priority_selected <- reactive({ input$priority_selected })
+  # plot_type_selected <- reactive({ input$plot_type_selected })
   
-  # Define plot height function to keep facet panels roghly the same height
-  # wheter displaying one or two.
+  # Define plot height function to keep facet panels roughly the same height
+  # whether displaying one or two.
   plot_height <- reactive({
-    ifelse(length(d_scene_selected()) == 1, 480,
-           ifelse(length(d_scene_selected()) == 2, 835, "auto"))
+    ifelse(length(input$d_scene_selected) == 1, 480,
+           ifelse(length(input$d_scene_selected) == 2, 835, "auto"))
            
   })
-  
-  ## TESTING ELEMENTS. ----
-  
-  #  observeEvent(input$s_scene_selected, {
-  #   # print(paste0("class: ", class(input$priority_selected)))
-  #    print(paste0("value: ", input$s_scene_selected))
-  # })
+
   
   ## Update elements. ----
   
@@ -226,23 +227,23 @@ server <- function(input, output, session) {                          # b server
   
   # if plot_type is vsd, filter available HUC8s to those with corresponding
   # supply data.  sort(names(demand))
-  observeEvent(input$plot_type_selected, {
-    req(plot_type_selected)
-    if (input$plot_type_selected != "vsd") {
-      choices <- sort(names(demand))
-    } else {
-      choices <- sort(subset(names(demand), names(demand) %in% supply$huc8_name))
-    }
-    updateSelectInput(session, 
-                      inputId = "huc8_selected",
-                         choices = choices,
-                         selected = "North Fork American")
-  })
+  # observeEvent(input$plot_type_selected, {
+  # #  req(plot_type_selected)
+  #   if (input$plot_type_selected != "vsd") {
+  #     choices <- sort(names(demand))
+  #   } else {
+  #     choices <- sort(subset(names(demand), names(demand) %in% supply$huc8_name))
+  #   }
+  #   updateSelectInput(session, 
+  #                     inputId = "huc8_selected",
+  #                        choices = choices,
+  #                        selected = "North Fork American")
+  # })
   
   # Update demand scenario choices.
   observeEvent(input$huc8_selected, {
     req(input$huc8_selected)
-    choices <- sort(unique(demand_selected()$d_scenario))
+    choices <- sort(unique(demand[[input$huc8_selected]]$d_scenario))
     updateSelectizeInput(session, 
                          inputId = "d_scene_selected",
                          choices = choices,
@@ -253,7 +254,7 @@ server <- function(input, output, session) {                          # b server
   observeEvent(input$huc8_selected, {
     req(input$huc8_selected)
     choices <- sort(unique(filter(supply, 
-                                  huc8_name %in% huc8_selected())$s_scenario))
+                                  huc8_name %in% input$huc8_selected)$s_scenario))
     updateSelectizeInput(session, "s_scene_selected",
                          choices = choices,
                          selected = c("Historic: Estimated Mean Unimpaired Flow at AMA, Wet Year",
@@ -262,7 +263,7 @@ server <- function(input, output, session) {                          # b server
   
   # Update priority year choices.
   py_choice_list <- reactive({
-    sort(na.omit(unique(demand_selected()$p_year)), decreasing = TRUE)
+    sort(na.omit(unique(demand[[input$huc8_selected]]$p_year)), decreasing = TRUE)
   })
   observeEvent(input$huc8_selected, {
     req(input$huc8_selected)
@@ -280,14 +281,13 @@ server <- function(input, output, session) {                          # b server
     bind_rows(
       {
         # Demand.
-        # Demand.
-        filter(demand_selected(), 
-               d_scenario %in% d_scene_selected()) %>%
+        filter(demand[[input$huc8_selected]], 
+               d_scenario %in% input$d_scene_selected) %>%
           mutate(fill_color = if_else(priority == "Statement Demand",
                                       "Statement Demand",
                                       if_else(priority == "Statement Demand",
                                               "Statement Demand",
-                                              if_else(p_year >= priority_selected(),
+                                              if_else(p_year >= input$priority_selected,
                                                       "Junior Post-14", "Post-14"))),
                  fill_color = ordered(fill_color, levels = wa_demand_order)) %>%
           group_by(d_scenario, plot_date, fill_color) %>%
@@ -313,15 +313,16 @@ server <- function(input, output, session) {                          # b server
                     .id = "source") %>% 
           arrange(plot_date, source)
       }, 
+      
       {
         # Supply.
-        filter(supply, huc8_name %in% huc8_selected(),
-               s_scenario %in% s_scene_selected()) %>%
+        filter(supply, huc8_name %in% input$huc8_selected,
+               s_scenario %in% input$s_scene_selected) %>%
           mutate(source = "old",
                  fill_color = NA,
                  plot_group = "supply") %>%
           full_join(.,
-                    as_tibble(d_scene_selected()),
+                    as_tibble(input$d_scene_selected),
                     by = character()) %>%
           select(source,
                  d_scenario = value,
@@ -377,9 +378,9 @@ server <- function(input, output, session) {                          # b server
         # Demand legend.
         scale_fill_manual(name = "Demand Type:",
                           values = wa_demand_pal,
-                          labels = c(paste(priority_selected(), 
+                          labels = c(paste(input$priority_selected, 
                                            "& Junior Post-14 Demand"),
-                                     paste(as.numeric(priority_selected()) -1,
+                                     paste(as.numeric(input$priority_selected) -1,
                                            "& Senior Post-14 Demand"),
                                            "Statement Demand")) +
         
