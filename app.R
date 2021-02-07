@@ -13,47 +13,45 @@ if(!("package:shinyjs" %in% search())) {
 if(!("package:shinipsum" %in% search())) {
   suppressMessages(library(shinipsum))
 }
-if(!("package:dplyr" %in% search())) {
-  suppressMessages(library(dplyr))
-}
-if(!("package:lubridate" %in% search())) {
-  suppressMessages(library(lubridate))
-}
-if(!("package:wesanderson" %in% search())) {
-  suppressMessages(library(wesanderson))
-}
-if(!("package:janitor" %in% search())) {
-  suppressMessages(library(janitor))
-}
 if(!("package:ggplot2" %in% search())) {
   suppressMessages(library(ggplot2))
-}
-if(!("package:sf" %in% search())) {
-  suppressMessages(library(sf))
 }
 if(!("package:leaflet" %in% search())) {
   suppressMessages(library(leaflet))
 }
+if(!("package:sf" %in% search())) {
+  suppressMessages(library(sf))
+}
+if(!("package:wesanderson" %in% search())) {
+  suppressMessages(library(wesanderson))
+}
+if(!("package:dplyr" %in% search())) {
+  suppressMessages(library(dplyr))
+}
+if(!("package:spdplyr" %in% search())) {
+  suppressMessages(library(spdplyr))
+}
+if(!("package:lubridate" %in% search())) {
+  suppressMessages(library(lubridate))
+}
 if(!("package:scales" %in% search())) {
   suppressMessages(library(scales))
-}
-if(!("package:aws.s3" %in% search())) {
-  suppressMessages(library(aws.s3))
 }
 if(!("package:DT" %in% search())) {
   suppressMessages(library(DT))
 }
 
+
+##### DEBUG #####
+if(!("package:reactlog" %in% search())) {
+  suppressMessages(library(reactlog))
+}
+reactlog_enable()
+
 ## Initialize values. ---
 
 # Data source.
 load_from_s3 <- ifelse(Sys.info()["nodename"] == "Home-iMac.local", FALSE, TRUE)
-
-# Water availability demand type order.
-wa_demand_order <- ordered(c("Junior Post-14",
-                             "Post-14",
-                             "Statement Demand",
-                             "Environmental Demand"))
 
 ## Load data files. ----
 
@@ -80,14 +78,21 @@ if(load_from_s3) {
   load("./output/dwast-supplies.RData")
 }
 
+
 ## Define color and shape aesthetics. ----
 
 # Water right type.
-wr_type_pal <-colorFactor(c(wes_palette("Darjeeling1"), 
-                            wes_palette("Darjeeling2"))[1:9],
-                          pods$wr_type)
+plot_wrt_pal <- c(wes_palette("Darjeeling1"), 
+                  wes_palette("Darjeeling2"))[2:10]
+names(plot_wrt_pal) <- sort(unique(wr_info$wr_type))
+map_wrt_pal <- colorFactor(palette = plot_wrt_pal, 
+                           domain = wr_info$wr_type)
 
 # Demand.
+wa_demand_order <- ordered(c("Junior Post-14",
+                             "Post-14",
+                             "Statement Demand",
+                             "Environmental Demand"))
 wa_demand_pal <- wes_palettes$GrandBudapest1[c(2, 1, 4, 3)]
 names(wa_demand_pal) <- wa_demand_order
 
@@ -95,154 +100,219 @@ names(wa_demand_pal) <- wa_demand_order
 wa_supply_pal <- colorRampPalette(wes_palette("Rushmore")[3:4])(3)
 wa_supply_shapes <- c(15, 16, 17)
 
-### UI -------------------------------------------------------------------------
 
-ui <- fluidPage(                                                   # b fluidPage
+#### UI ------------------------------------------------------------------------
+
+ui <- navbarPage(
   useShinyjs(),
+  
+  # Title.
+  title = div(img(src = "DWR-ENF-Logo.png",
+                  style = "position: relative; margin:-15px 0px; display:right-align;"),
+              "Water Supply/Demand Exploration Tool"),
+  tags$head(
+    tags$style(HTML('.navbar-nav > li > a, .navbar-brand {
+                            padding-top:-6px !important; 
+                            padding-bottom:0 !important;
+                            height: 56px;
+                            }
+                           .navbar {min-height:56px !important;}'))
+  ),
   
   # Set theme.
   theme = shinytheme("cerulean"),
   
-  # Dashboard Title
-  titlePanel(title = div(img(src = "DWR-ENF-Logo-48px.png"), 
-                         "Water Supply/Demand Exploration Tool")),
+  ## Main Tabs. ----
   
-  sidebarLayout(                                               # b sidebarLayout
-    
-    sidebarPanel(width = 3,                                     # b sidebarPanel
-                 fluidRow(                                          # b fluidRow
-                   
-                   # Select Visualization to show.
-                   radioButtons(inputId = "plot_type_selected",
-                                label = "Select Visualization:",
-                                choices = c(
-                                  "View Supply-Demand Scenarios" = "vsd",
-                                  "View Demand By Priority (Placeholder)" = "vbp",
-                                  "View Demand By Water Right Type (Placeholder)" = "vbwrt"),
-                                selected = "vsd"
-                   ),
-                   
-                   # Select HUC-8 watershed.
-                   selectInput(inputId = "huc8_selected",
-                               label = "Select HUC-8 Watershed:",
-                               choices = NULL,
-                               selected = NULL,
-                               multiple = FALSE
-                   ),
-                   p("When 'View Supply-Demand Scenarios' is selected, only those watersheds with available Supply Scenarios are selectable."),
-                   br(),
-                   
-                   # Select demand scenario(s).
-                   selectizeInput(inputId = "d_scene_selected",
-                                  label = "Select Up To Two Demand Scenarios:",
-                                  choices = NULL,
-                                  selected = NULL,
-                                  multiple = TRUE,
-                                  options = list(maxItems = 2)
-                   ),
-                   
-                   ## Select supply scenario(s).
-                   selectizeInput(inputId = "s_scene_selected",
-                                  label = "Select Up To Three Supply Scenarios:",
-                                  choices = NULL,
-                                  selected = NULL,
-                                  multiple = TRUE,
-                                  options = list(maxItems = 3)
-                   ),
-                   
-                   ## Select priority year to slice.
-                   selectInput(inputId = "priority_selected",
-                               label = "Select Demand Priority Year to Slice:",
-                               choices = NULL,
-                               selected = NULL,
-                               multiple = FALSE),
-                   
-                   ## My logos !!
-                   br(),br(),br(),
-                   HTML('<center><p>Built with</p>
+  # --> Explore tab (plots & tables).
+  tabPanel("Explore",
+           fluidRow(
+             sidebarLayout(
+               
+               # SIDEBAR PANEL.
+               sidebarPanel(width = 3,
+                            
+                            # Select units to display.
+                            radioButtons(inputId = "units_selected",
+                                        label = "Select Units:",
+                                        choiceNames = list(
+                                          "Cubic Feet per Second (cfs)",
+                                          "Acre-Feet per Day (AF/d)"
+                                        ),
+                                        choiceValues = list(
+                                          "cfs",
+                                          "afd"
+                                        ),
+                                        selected = "cfs"
+                            ),
+                            
+                            # Select HUC-8 watershed.
+                            selectInput(inputId = "huc8_selected",
+                                        label = "Select HUC-8 Watershed:",
+                                        choices = sort(names(demand)),
+                                        selected = "North Fork American",
+                                        multiple = FALSE
+                            ),
+                            
+                            # Filter for watersheds with supply information.
+                            checkboxInput(inputId = "supply_filter",
+                                          label = "Filter for watersheds with available supply information",
+                                          value = FALSE
+                            ),
+                            
+                            # Select demand scenario(s).
+                            selectizeInput(inputId = "d_scene_selected",
+                                           label = "Select Up To Two Demand Scenarios:",
+                                           choices = NULL,
+                                           selected = NULL,
+                                           multiple = TRUE,
+                                           options = list(maxItems = 2)
+                            ),
+                            wellPanel(
+                              # Select supply scenario(s) for vsd_plot.
+                              selectizeInput(inputId = "s_scene_selected",
+                                             label = "Select Up To Three Supply Scenarios:",
+                                             choices = NULL,
+                                             selected = NULL,
+                                             multiple = TRUE,
+                                             options = list(maxItems = 3)
+                              ),
+                              
+                              # Select priority year to slice for vsd_plot.
+                              selectInput(inputId = "priority_selected",
+                                          label = "Select Demand Priority Year to Slice:",
+                                          choices = NULL,
+                                          selected = NULL,
+                                          multiple = FALSE),
+                              
+                              # Select water right types to include in dbwrt_plot.
+                              checkboxGroupInput(inputId = "wrt_selected",
+                                                 label = "Select Water Right Type(s) to Display:",
+                                                 choices = NULL,
+                                                 selected = NULL)
+                            ),
+                            
+                            # My logos !!
+                            br(),br(),br(),
+                            HTML('<center><p>Built with</p>
                       <p><img src="shiny.png", height = "50">
                       and <img src="RStudio.png", height = "50">
                       by <img src="jgy_hex.png", height = "50"></p></center>')
-                   
-                 )                                                  # e fluidRow
-    ),                                                          # e sidebarPanel
-    
-    mainPanel(width = 9,                                           # b mainPanel
-              
-              # h4("Demand in Selected Watershed"),
-              plotOutput(outputId = "main_plot")
-              
-              
-    )                                                              # e mainPanel
-    
-  )                                                            # e sidebarLayout
+                      
+               ),
+               
+               # MAIN PANEL.
+               mainPanel(width = 9,
+                         
+                         # Plots.
+                         column(width = 7,
+                                
+                                # Plot/Data Tabs.
+                                tabsetPanel(type = "pills",
+                                            
+                                            # Plot tabs.
+                                            tabPanel("Plots",
+                                                     
+                                                     tabsetPanel(type = "pills",
+                                                                 
+                                                                 # Supply-Demand scenario Ppot.
+                                                                 tabPanel("Supply-Demand Scenarios",
+                                                                          fluidRow(
+                                                                            br(),
+                                                                            plotOutput(outputId = "vsd_plot")
+                                                                          )
+                                                                 ),
+                                                                 
+                                                                 # Demand by Water right type plot.
+                                                                 tabPanel("Demand by Water Right Type",
+                                                                          fluidRow(
+                                                                            br(),
+                                                                            plotOutput(outputId = "dbwrt_plot")
+                                                                          )
+                                                                 ),
+                                                                 
+                                                                 # Demand by priority plot.
+                                                                 tabPanel("Demand by Priority",
+                                                                          fluidRow(
+                                                                            br(),
+                                                                            plotOutput(outputId = "dbp_plot")
+                                                                          )
+                                                                 )
+                                                     )
+                                            ),
+                                            
+                                            # Data Tabs.
+                                            tabPanel("Data",
+                                                     fluidRow(
+                                                       br(),
+                                                       dataTableOutput(outputId = "pod_points_result")
+                                                     )
+                                            ),
+                                            
+                                            
+                                            # California Watershed Map.
+                                            tabPanel("California Watershed Map")
+                                            
+                                )      
+                         ),
+                         
+                         # Minimap.
+                         column(width = 5,
+                                br(),
+                                h4("Watershed Location and PODs"),
+                                leafletOutput(outputId = "mini_map",
+                                              height = "500px")
+                                
+                         )
+               )
+             )
+           )
+  ), # end fluid row
   
-)                                                                  # e fluidPage
-
-
-### SERVER ---------------------------------------------------------------------
-
-server <- function(input, output, session) {                          # b server
+  # --> About tab (how to use, data sources, etc.)
+  tabPanel("About",
+           h4("Main Tab 1"),
+           #   plotOutput(outputId = "random_plot")
+  ),
+  selected = "Explore"
   
-  ## SETUP. ----
+)
+
+
+
+
+#### SERVER --------------------------------------------------------------------
+
+server <- function(input, output, session) {
+  
+  ### SETUP. ----
   
   # Convert input values to reactive variables.
-  demand_selected <- reactive({ demand[[input$huc8_selected]] })
-  huc8_selected <- reactive({ input$huc8_selected })
-  d_scene_selected <- reactive ({ input$d_scene_selected })
-  s_scene_selected <- reactive ({ input$s_scene_selected })
-  priority_selected <- reactive({ input$priority_selected })
-  plot_type_selected <- reactive({ input$plot_type_selected })
+  # demand_selected <- reactive({ demand[[input$huc8_selected]] })
+  # huc8_selected <- reactive({ input$huc8_selected })
+  # d_scene_selected <- reactive ({ input$d_scene_selected })
+  # s_scene_selected <- reactive ({ input$s_scene_selected })
+  # priority_selected <- reactive({ input$priority_selected })
   
-  # Define plot height function to keep facet panels roghly the same height
-  # wheter displaying one or two.
+  # Define plot height function to keep facet panels roughly the same height
+  # whether displaying one or two.
   plot_height <- reactive({
-    ifelse(length(d_scene_selected()) == 1, 480,
-           ifelse(length(d_scene_selected()) == 2, 835, "auto"))
-           
+    ifelse(length(input$d_scene_selected) == 1, 480,
+           ifelse(length(input$d_scene_selected) == 2, 835, "auto"))
+    
   })
   
-  ## TESTING ELEMENTS. ----
+  ### Control Input Selections.
   
-  #  observeEvent(input$s_scene_selected, {
-  #   # print(paste0("class: ", class(input$priority_selected)))
-  #    print(paste0("value: ", input$s_scene_selected))
-  # })
+  # Disable units selector until implemented
+  disable(id = "units_selected")
   
-  ## Update elements. ----
-  
-  # Watch plot type radio buttons.
-  observe({
-    if(input$plot_type_selected != "vsd") {
-      hideElement(id = "s_scene_selected")
-      hideElement(id = "priority_selected")
-    } else {
-      showElement(id = "s_scene_selected")
-      showElement(id = "priority_selected")
-    }
-  })
-  
-  ## Update selections. ----
-  
-  # if plot_type is vsd, filter available HUC8s to those with corresponding
-  # supply data.  sort(names(demand))
-  observeEvent(input$plot_type_selected, {
-    req(plot_type_selected)
-    if (input$plot_type_selected != "vsd") {
-      choices <- sort(names(demand))
-    } else {
-      choices <- sort(subset(names(demand), names(demand) %in% supply$huc8_name))
-    }
-    updateSelectInput(session, 
-                      inputId = "huc8_selected",
-                         choices = choices,
-                         selected = "North Fork American")
-  })
+  ### Update elements. ----
   
   # Update demand scenario choices.
   observeEvent(input$huc8_selected, {
-    req(input$huc8_selected)
-    choices <- sort(unique(demand_selected()$d_scenario))
+    # req(input$huc8_selected)
+    choices <- sort(unique(demand[[input$huc8_selected]]$d_scenario))
     updateSelectizeInput(session, 
                          inputId = "d_scene_selected",
                          choices = choices,
@@ -251,10 +321,11 @@ server <- function(input, output, session) {                          # b server
   
   # Update supply scenario choices.
   observeEvent(input$huc8_selected, {
-    req(input$huc8_selected)
+    #   req(input$huc8_selected)
     choices <- sort(unique(filter(supply, 
-                                  huc8_name %in% huc8_selected())$s_scenario))
-    updateSelectizeInput(session, "s_scene_selected",
+                                  huc8_name %in% input$huc8_selected)$s_scenario))
+    updateSelectizeInput(session, 
+                         inputId = "s_scene_selected",
                          choices = choices,
                          selected = c("Historic: Estimated Mean Unimpaired Flow at AMA, Wet Year",
                                       "Historic: Estimated Mean Unimpaired Flow at AMA, Critical Year"))
@@ -262,15 +333,26 @@ server <- function(input, output, session) {                          # b server
   
   # Update priority year choices.
   py_choice_list <- reactive({
-    sort(na.omit(unique(demand_selected()$p_year)), decreasing = TRUE)
+    sort(na.omit(unique(demand[[input$huc8_selected]]$p_year)), decreasing = TRUE)
   })
-  observeEvent(input$huc8_selected, {
-    req(input$huc8_selected)
+  observeEvent(input$d_scene_selected, {
+    # req(input$huc8_selected,
+    #     input$d_scene_selected)
     choices <- py_choice_list()[py_choice_list() > min(py_choice_list())]
     updateSelectInput(session, "priority_selected",
                       choices = choices,
-                     # selected = max(choices),
-                      selected = 1958)
+                      # selected = max(choices),
+                      selected = sample(choices, 1))
+  })
+  
+  # Update water right type choices.
+  observeEvent(input$huc8_selected, {
+    # req(input$huc8_selected, input$d_scene_selected)
+    choices <- unique(demand[[input$huc8_selected]]$wr_type)
+    updateCheckboxGroupInput(session = session, 
+                             inputId = "wrt_selected",
+                             choices = choices,
+                             selected = choices)
   })
   
   ## Build datasets. ----
@@ -280,14 +362,13 @@ server <- function(input, output, session) {                          # b server
     bind_rows(
       {
         # Demand.
-        # Demand.
-        filter(demand_selected(), 
-               d_scenario %in% d_scene_selected()) %>%
+        filter(demand[[input$huc8_selected]], 
+               d_scenario %in% input$d_scene_selected) %>%
           mutate(fill_color = if_else(priority == "Statement Demand",
                                       "Statement Demand",
                                       if_else(priority == "Statement Demand",
                                               "Statement Demand",
-                                              if_else(p_year >= priority_selected(),
+                                              if_else(p_year >= input$priority_selected,
                                                       "Junior Post-14", "Post-14"))),
                  fill_color = ordered(fill_color, levels = wa_demand_order)) %>%
           group_by(d_scenario, plot_date, fill_color) %>%
@@ -315,13 +396,13 @@ server <- function(input, output, session) {                          # b server
       }, 
       {
         # Supply.
-        filter(supply, huc8_name %in% huc8_selected(),
-               s_scenario %in% s_scene_selected()) %>%
+        filter(supply, huc8_name %in% input$huc8_selected,
+               s_scenario %in% input$s_scene_selected) %>%
           mutate(source = "old",
                  fill_color = NA,
                  plot_group = "supply") %>%
           full_join(.,
-                    as_tibble(d_scene_selected()),
+                    as_tibble(input$d_scene_selected),
                     by = character()) %>%
           select(source,
                  d_scenario = value,
@@ -336,10 +417,25 @@ server <- function(input, output, session) {                          # b server
     )
   })
   
-  ## Render outputs. ----
+  # Demand by water right type dataset.
+  wrt_plot_data <- reactive({ 
+    # req(input$huc8_selected, input$d_scene_selected)
+    demand[[input$huc8_selected]] %>% 
+      filter(d_scenario %in% input$d_scene_selected,
+             wr_type %in% input$wrt_selected) %>% 
+      group_by(d_scenario, 
+               wr_type, 
+               plot_month = month(plot_date, label = TRUE)) %>%
+      summarize(af_monthly = sum(af_monthly, na.rm = TRUE),
+                af_daily = sum(af_daily, na.rm = TRUE),
+                cfs = sum(cfs, na.rm = TRUE),
+                .groups = "drop")
+  })
   
-  # Main plot.
-  output$main_plot <- renderPlot({
+  ### OUTPUT. ----
+  
+  ## Supply-Demand Scenario plot.
+  output$vsd_plot <- renderPlot({
     
     # Validate.
     validate(
@@ -348,97 +444,243 @@ server <- function(input, output, session) {                          # b server
     )
     
     # View Supply and Demand (vsd).
-    if (input$plot_type_selected == "vsd") {
-      ggplot(data = vsd_plot_data(),
-             aes(x = plot_date,
-                 y = cfs)) +
-        
-        # Demand.
-        geom_area(data = subset(vsd_plot_data(), plot_group == "demand"),
-                  position = "stack",
-                  aes(fill = fill_color)) +
-        
-        # Supply.
-        geom_point(data = subset(vsd_plot_data(), plot_group == "supply"),
-                   aes(color = s_scenario,
-                       shape = s_scenario),
-                   size = 7) +
-        geom_line(data = subset(vsd_plot_data(), plot_group == "supply"),
-                  aes(color = s_scenario),
-                  linetype = "dashed") +
-        
-        # X axis format.
-        scale_x_date(date_labels = "%m/%d/%y",
-                     date_minor_breaks = "1 month") +
-        
-        # Y axis format.
-        scale_y_continuous(labels = comma) +
-        
-        # Demand legend.
-        scale_fill_manual(name = "Demand Type:",
-                          values = wa_demand_pal,
-                          labels = c(paste(priority_selected(), 
-                                           "& Junior Post-14 Demand"),
-                                     paste(as.numeric(priority_selected()) -1,
-                                           "& Senior Post-14 Demand"),
-                                           "Statement Demand")) +
-        
-        # Supply legend.
-        scale_shape_manual(name = "Supply Scenario:",
-                           values = wa_supply_shapes) +
-        scale_color_manual(name = "Supply Scenario:",
-                           values = wa_supply_pal) +
-        
-        # Facet on demand scenario.
-        facet_wrap(~ d_scenario, 
-                   ncol = 1,
-                   scales = "free_x") +
-        
-        # Labels.
-        labs(title = "Plot Title Placeholder",
-             y = "Cubic Feet per Second (cfs)") +
-        
-        # Theme.
-        theme_minimal() +
-        theme(
-          plot.title = element_text(size = rel(2.0)),
-          strip.text.x = element_text(size = rel(2.0)),
-          axis.title = element_text(size = rel(1.2)),
-          axis.text = element_text(size = rel(1.2)),
-          legend.text = element_text(size = rel(1.2)),
-          legend.title = element_text(size = rel(1.2)),
-          legend.position = "bottom",
-          legend.box = "horizontal",
-          legend.direction = "vertical",
-          panel.spacing = unit(2, "lines"),
-          axis.title.x = element_blank()
-          )
+    ggplot(data = vsd_plot_data(),
+           aes(x = plot_date,
+               y = cfs)) +
       
-    } else if (input$plot_type_selected == "vbwrt") {
+      # Demand.
+      geom_area(data = subset(vsd_plot_data(), plot_group == "demand"),
+                position = "stack",
+                aes(fill = fill_color)) +
       
-      # Demand by water right type.
-      random_ggplot()
-    } else if (input$plot_type_selected == "vbp") {
+      # Supply.
+      geom_point(data = subset(vsd_plot_data(), plot_group == "supply"),
+                 aes(color = s_scenario,
+                     shape = s_scenario),
+                 size = 7) +
+      geom_line(data = subset(vsd_plot_data(), plot_group == "supply"),
+                aes(color = s_scenario),
+                linetype = "dashed") +
       
-      # Demand by priority.
-      random_ggplot()
-    }
+      # X axis format.
+      scale_x_date(date_labels = "%m/%d/%y",
+                   date_minor_breaks = "1 month") +
+      
+      # Y axis format.
+      scale_y_continuous(labels = comma) +
+      
+      # Demand legend.
+      scale_fill_manual(name = "Demand Type:",
+                        values = wa_demand_pal,
+                        labels = c(paste(input$priority_selected, 
+                                         "& Junior Post-14 Demand"),
+                                   paste(as.numeric(input$priority_selected) -1,
+                                         "& Senior Post-14 Demand"),
+                                   "Statement Demand")) +
+      
+      # Supply legend.
+      scale_shape_manual(name = "Supply Scenario:",
+                         values = wa_supply_shapes) +
+      scale_color_manual(name = "Supply Scenario:",
+                         values = wa_supply_pal) +
+      
+      # Facet on demand scenario.
+      facet_wrap(~ d_scenario, 
+                 ncol = 1,
+                 scales = "free_x") +
+      
+      # Labels.
+      labs(title = "Plot Title Placeholder",
+           y = "Cubic Feet per Second (cfs)") +
+      
+      # Theme.
+      theme_minimal() +
+      theme(
+        plot.title = element_text(size = rel(2.0)),
+        strip.text.x = element_text(size = rel(2.0)),
+        axis.title = element_text(size = rel(1.2)),
+        axis.text = element_text(size = rel(1.2)),
+        legend.text = element_text(size = rel(1.2)),
+        legend.title = element_text(size = rel(1.2)),
+        legend.position = "bottom",
+        legend.box = "horizontal",
+        legend.direction = "vertical",
+        panel.spacing = unit(2, "lines"),
+        axis.title.x = element_blank()
+      )
+    
+  }, height = function() plot_height()
+  
+  )
+  
+  ## Demand By Water Right Type Plot.
+  output$dbwrt_plot <- renderPlot({
+    
+    # Validate.
+    validate(
+      need(input$d_scene_selected, 
+           "No data to plot.\nPlease slelect at least one Demand Scenario."),
+      need(input$huc8_selected, 
+           "No data to plot.\nPlease slelect a Watershed."),
+      need(nrow(wrt_plot_data()) > 0,
+           "No data for selected water right types.")
+    )
+    
+    ggplot(data = wrt_plot_data(),
+           aes(x = plot_month,
+               y = cfs,
+               fill = wr_type)) +
+      
+      # Demand bars.
+      geom_col() + 
+      
+      # Y axis format.
+      scale_y_continuous(labels = comma) +
+      
+      # Legend.
+      scale_fill_manual(name = "Water Right Type:",
+                        values = plot_wrt_pal) +
+      
+      # labels
+      labs(title = "Monthly Demand by Water Right Type",
+           y = "Cubic Feet per Second (cfs)") +
+      
+      # Facet on demand scenario.
+      facet_wrap(~ d_scenario, 
+                 ncol = 1,
+                 scales = "free_x") +
+      
+      # Theme.
+      theme_minimal() +
+      theme(
+        plot.title = element_text(size = rel(2.0)),
+        strip.text.x = element_text(size = rel(2.0)),
+        axis.title = element_text(size = rel(1.2)),
+        axis.text = element_text(size = rel(1.2)),
+        legend.text = element_text(size = rel(1.2)),
+        legend.title = element_text(size = rel(1.2)),
+        legend.position = "bottom",
+        legend.box = "horizontal",
+        legend.direction = "vertical",
+        panel.spacing = unit(2, "lines"),
+        axis.title.x = element_blank())
     
   }, height = function() plot_height()
   )
   
-  
-  output$random_plot <- renderPlot({
+  # Random plot placeholder.
+  output$dbp_plot <- renderPlot({
     random_ggplot()
   })
   
+  ## Mini Map.
   
-}                                                                     # e server
+  # Filter POD points.
+  pod_points <- reactive({
+    pods %>% 
+      filter(wr_id %in% demand[[input$huc8_selected]]$wr_id)
+  })
+  
+  # Filter watershed polygon.
+  plot_poly <- reactive({
+    huc8_layer %>% filter(huc8_name %in% input$huc8_selected)
+  })
+  
+  output$mini_map <- renderLeaflet({
+    
+    validate(
+      need(nrow(pod_points()) > 0, 
+           paste0("No Data Available.\n",
+                  "Please select other Watershed(s) or Water Right Type(s)."))
+    )
+    leaflet() %>%
+      addProviderTiles(providers$CartoDB.Positron) %>%
+      addPolygons(data = plot_poly(),
+                  weight = 3,
+                  col = "blue",
+                  fill = TRUE,
+                  fillOpacity = 0,
+                  label = plot_poly()$huc8_name,
+                  labelOptions = labelOptions(textsize = "12px",
+                                              sticky = TRUE)) %>%
+      addCircleMarkers(data = pod_points(),
+                       radius = 4,
+                       fillOpacity = 0.8,
+                       stroke = FALSE,
+                       weight = 2,
+                       fillColor = ~map_wrt_pal(wr_type),
+                       label = pod_points()$wr_id
+      ) %>% 
+      addLegend(position = "bottomleft",
+                pal = map_wrt_pal,
+                values = pod_points()$wr_type,
+                title = "Water Right Type",
+                opacity = 1)
+    
+    
+    
+  })
+  
+  ### TEST OUTPUTS
+  
+  output$pod_points_result <- renderDataTable({
+    pod_points()
+  })
+  
+  
+  
+  
+  
+  # Random image placeholder.
+  output$random_image <- renderImage({
+    random_image()
+  }, deleteFile = FALSE)
+  
+  
+  
+}
 
 
-### APP ------------------------------------------------------------------------
+#### APP -----------------------------------------------------------------------
 
 shinyApp(ui, server)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
