@@ -254,11 +254,15 @@ ui <- navbarPage(
                                      
                                      # Data Tabs.
                                      tabPanel("Data",
+                                              br(),
+                                              h3("Just placeholder data for now..."),
                                               DTOutput(outputId = "pod_points_result")
                                      ),
                                      
                                      # California Watershed Map.
                                      tabPanel("California Watershed Map",
+                                              br(),
+                                              h3("Coming soon...")
                                      )
                          )      
                )
