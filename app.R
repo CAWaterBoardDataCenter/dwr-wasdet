@@ -1,6 +1,9 @@
 ### INITIALIZATION -------------------------------------------------------------
 
 ## Load libraries. ----
+if(!("package:aws.s3" %in% search())) {
+  suppressMessages(library(aws.s3))
+}
 if(!("package:shiny" %in% search())) {
   suppressMessages(library(shiny))
 }
