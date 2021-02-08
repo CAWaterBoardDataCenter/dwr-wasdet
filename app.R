@@ -54,23 +54,23 @@ reactlog_enable()
 ## Initialize values. ---
 
 # Data source.
-load_from_s3 <- ifelse(Sys.info()["nodename"] == "Home-iMac.local", FALSE, TRUE)
+# load_from_s3 <- ifelse(Sys.info()["nodename"] == "Home-iMac.local", FALSE, TRUE)
 
 ## Load data files. ----
 
-if(load_from_s3) {
-  # Water Right Info.
-  s3load(object = "dwast-wrinfo.RData",
-         bucket = "dwr-enf-shiny")
-  
-  # Demand Data.
-  s3load(object = "dwast-demands.RData",
-         bucket = "dwr-enf-shiny")
-  
-  # Supply data.
-  s3load(object = "dwast-supplies.RData",
-         bucket = "dwr-enf-shiny")
-} else {
+# if(load_from_s3) {
+#   # Water Right Info.
+#   s3load(object = "dwast-wrinfo.RData",
+#          bucket = "dwr-enf-shiny")
+#   
+#   # Demand Data.
+#   s3load(object = "dwast-demands.RData",
+#          bucket = "dwr-enf-shiny")
+#   
+#   # Supply data.
+#   s3load(object = "dwast-supplies.RData",
+#          bucket = "dwr-enf-shiny")
+# } else {
   # Water Right Info.
   load("./output/dwast-wrinfo.RData")
   
@@ -79,7 +79,7 @@ if(load_from_s3) {
   
   # Supply data.
   load("./output/dwast-supplies.RData")
-}
+# }
 
 ## Define color and shape aesthetics. ----
 
@@ -279,7 +279,6 @@ ui <- navbarPage(
                     h2("What"),
                     h2("Why"),
                     h2("How"),
-                    p("This is an exploration tool. Explain how we use it, not how User 'should' use it."),
                     br(),br(),
                     h4("Data source information"),
                     h4("Dashboard Curator Information")

@@ -48,7 +48,6 @@ reports
 dwr-files
 data-gaps
 gis
-output
 demands
 scratch.R
 credentials.csv
