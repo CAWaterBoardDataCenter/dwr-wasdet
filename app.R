@@ -246,8 +246,8 @@ ui <- navbarPage(
                                      # Data Tabs.
                                      tabPanel("Data",
                                               br(),
-                                              h3("Water Right Information"),
-                                              DTOutput(outputId = "pod_points_result")
+                                              h3("Selected Demand Data"),
+                                              DTOutput(outputId = "demand_data_table")
                                      ),
                                      
                                      # California Watershed Map.
@@ -665,15 +665,14 @@ server <- function(input, output, session) {
                 opacity = 1)
   })
   
-  ### TEST OUTPUTS
-  
-  output$pod_points_result <- renderDataTable({
-    pod_points() %>%  
-      as.data.frame(.) %>% 
-      select(-huc8_name,
-             #-wr_class,
-             -demand_wt, 
-             -SHAPE)
+  # Demand data table.
+  output$demand_data_table <- renderDataTable({
+    demand[[input$huc8_selected]] %>% 
+      filter(d_scenario %in% input$d_scene_selected,
+             wr_type %in% input$wrt_selected) %>% 
+      mutate(plot_date = month(plot_date)) %>% 
+      rename(month = plot_date) %>% 
+      select(-p_year)
   },
   filter = "top",
   rownames = FALSE)
