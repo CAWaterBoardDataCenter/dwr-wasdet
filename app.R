@@ -1,9 +1,6 @@
 ### INITIALIZATION -------------------------------------------------------------
 
 ## Load libraries. ----
-if(!("package:aws.s3" %in% search())) {
-  suppressMessages(library(aws.s3))
-}
 if(!("package:shiny" %in% search())) {
   suppressMessages(library(shiny))
 }
@@ -58,37 +55,20 @@ reactlog_enable()
 
 ## Load data files. ----
 
-# if(load_from_s3) {
-#   # Water Right Info.
-#   s3load(object = "dwast-wrinfo.RData",
-#          bucket = "dwr-enf-shiny")
-#   
-#   # Demand Data.
-#   s3load(object = "dwast-demands.RData",
-#          bucket = "dwr-enf-shiny")
-#   
-#   # Supply data.
-#   s3load(object = "dwast-supplies.RData",
-#          bucket = "dwr-enf-shiny")
-# } else {
-  # Water Right Info.
-  load("./output/dwast-wrinfo.RData")
-  
-  # Demand data.
-  load("./output/dwast-demands.RData")
-  
-  # Supply data.
-  load("./output/dwast-supplies.RData")
-# }
+# Water Right Info.
+load("./output/dwast-wrinfo.RData")
+
+# Demand data.
+ifelse(Sys.info()["nodename"] == "Home-iMac.local", 
+       load("./explore/dwast-demands-test-set.RData"), 
+       load("./output/dwast-demands.RData"))
+
+
+# Supply data.
+load("./output/dwast-supplies.RData")
+
 
 ## Define color and shape aesthetics. ----
-
-# Water right type.
-plot_wrt_pal <- c(wes_palette("Darjeeling1"), 
-                  wes_palette("Darjeeling2"))[2:10]
-names(plot_wrt_pal) <- sort(unique(wr_info$wr_type))
-map_wrt_pal <- colorFactor(palette = plot_wrt_pal, 
-                           domain = wr_info$wr_type)
 
 # Demand.
 wa_demand_order <- ordered(c("Junior Post-14",
@@ -97,6 +77,17 @@ wa_demand_order <- ordered(c("Junior Post-14",
                              "Environmental Demand"))
 wa_demand_pal <- wes_palettes$GrandBudapest1[c(2, 1, 4, 3)]
 names(wa_demand_pal) <- wa_demand_order
+
+# Water right type.
+plot_wrt_pal <- c(wes_palette("Darjeeling1"), 
+                  wes_palette("Darjeeling2"))[2:10]
+names(plot_wrt_pal) <- sort(unique(wr_info$wr_type))
+map_wrt_pal <- colorFactor(palette = plot_wrt_pal, 
+                           domain = wr_info$wr_type)
+
+# Priority.
+priority_pal <- c(viridis_pal()(length(c(year(now()):1914))), "gray", "black")
+names(priority_pal) <- c(c(year(now()):1914), "Statement Demand", "Environmental Demand")
 
 # Supply.
 wa_supply_pal <- colorRampPalette(wes_palette("Rushmore")[3:4])(3)
@@ -219,7 +210,6 @@ ui <- navbarPage(
                                                                    # Supply-Demand scenario Plot.
                                                                    tabPanel("Supply-Demand Scenarios",
                                                                             fluidRow(
-                                                                              br(),
                                                                               plotOutput(outputId = "vsd_plot")
                                                                             )
                                                                    ),
@@ -236,8 +226,7 @@ ui <- navbarPage(
                                                                    tabPanel("Demand by Priority",
                                                                             fluidRow(
                                                                               br(),
-                                                                              h3("Coming soon...")
-                                                                            #  plotOutput(outputId = "dbp_plot")
+                                                                              plotOutput(outputId = "dbp_plot")
                                                                             )
                                                                    )
                                                        )      
@@ -246,7 +235,6 @@ ui <- navbarPage(
                                                 # Mini-map column
                                                 column(width = 5,
                                                        fluidRow(
-                                                         br(),
                                                          h4("Watershed Location and PODs"),
                                                          leafletOutput(outputId = "mini_map",
                                                                        height = "500px")
@@ -258,7 +246,7 @@ ui <- navbarPage(
                                      # Data Tabs.
                                      tabPanel("Data",
                                               br(),
-                                              h3("Just placeholder data for now..."),
+                                              h3("Water Right Information"),
                                               DTOutput(outputId = "pod_points_result")
                                      ),
                                      
@@ -433,6 +421,20 @@ server <- function(input, output, session) {
                 .groups = "drop")
   })
   
+  ## Demand by priority dataset.
+  dbp_plot_data <- reactive({
+    demand[[input$huc8_selected]] %>% 
+      filter(d_scenario %in% input$d_scene_selected,
+             wr_type %in% input$wrt_selected) %>% 
+      group_by(d_scenario, 
+               priority, 
+               plot_month = month(plot_date, label = TRUE)) %>%
+      summarize(af_monthly = sum(af_monthly, na.rm = TRUE),
+                af_daily = sum(af_daily, na.rm = TRUE),
+                cfs = sum(cfs, na.rm = TRUE),
+                .groups = "drop") %>% 
+      mutate(priority = ordered(priority, levels = names(priority_pal)))
+  })
   
   ### OUTPUT. ----
   
@@ -492,8 +494,7 @@ server <- function(input, output, session) {
                  scales = "free_x") +
       
       # Labels.
-      labs(title = "Plot Title Placeholder",
-           y = "Cubic Feet per Second (cfs)") +
+      labs(y = "Cubic Feet per Second (cfs)") +
       
       # Theme.
       theme_minimal() +
@@ -569,10 +570,52 @@ server <- function(input, output, session) {
   }, height = function() plot_height()
   )
   
-  # Demand by Priority plot (dbp).
+  ## Demand by Priority plot (dbp).
   output$dbp_plot <- renderPlot({
-    random_ggplot()
-  })
+    
+    # Render.
+    ggplot(data = dbp_plot_data(),
+           aes(x = plot_month,
+               y = cfs,
+               fill = priority)) +
+      
+      # Demand bars.
+      geom_col() + 
+      
+      # Y axis format.
+      scale_y_continuous(labels = comma) +
+      
+      # Legend.
+      scale_fill_manual(name = "Priority:",
+                        values = priority_pal) +
+      guides(fill = guide_legend(ncol = 2)) +
+      
+      # labels
+      labs(title = "Monthly Demand by Priority",
+           y = "Cubic Feet per Second (cfs)") +
+      
+      # Facet on demand scenario.
+      facet_wrap(~ d_scenario, 
+                 ncol = 1,
+                 scales = "free_x") +
+      
+      # Theme.
+      theme_minimal() +
+      theme(
+        plot.title = element_text(size = rel(2.0)),
+        strip.text.x = element_text(size = rel(2.0)),
+        axis.title = element_text(size = rel(1.2)),
+        axis.text = element_text(size = rel(1.2)),
+        legend.text = element_text(size = rel(1.2)),
+        legend.title = element_text(size = rel(1.2)),
+        #  legend.position = "bottom",
+        # legend.box = "horizontal",
+        #  legend.direction = "horizontal",
+        #  panel.spacing = unit(2, "lines"),
+        axis.title.x = element_blank())
+    
+  }, height = function() plot_height()
+  )
   
   ## Mini Map.
   
@@ -615,7 +658,7 @@ server <- function(input, output, session) {
                        fillColor = ~map_wrt_pal(wr_type),
                        label = pod_points()$wr_id
       ) %>% 
-      addLegend(position = "bottomleft",
+      addLegend(position = "topright",
                 pal = map_wrt_pal,
                 values = pod_points()$wr_type,
                 title = "Water Right Type",
@@ -625,8 +668,15 @@ server <- function(input, output, session) {
   ### TEST OUTPUTS
   
   output$pod_points_result <- renderDataTable({
-    pod_points()
-  })
+    pod_points() %>%  
+      as.data.frame(.) %>% 
+      select(-huc8_name,
+             #-wr_class,
+             -demand_wt, 
+             -SHAPE)
+  },
+  filter = "top",
+  rownames = FALSE)
   
 } # End Server
 

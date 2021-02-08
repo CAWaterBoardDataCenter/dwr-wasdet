@@ -13,18 +13,18 @@ library(aws.s3)
 download_divs <- FALSE
 
 # Load functions.
-# source("f_getReportedDivs.R")
+if(download_divs) source("f_getReportedDivs.R")
 
 
 # set up parallel R sessions.
 plan(multisession)
 
 # Set project year.
-project_year <- 2021
+project_year <- year(now())
 
 # Define variables.
 
-priority_order <- c(c(year(now()):1914),  
+priority_order <- c(c(project_year:1914),  
                     "Statement Demand", 
                     "Environmental Demand")
 
@@ -54,7 +54,7 @@ diversions <- diversions_raw %>% clean_names() %>%
          af_monthly = amount,
          everything(),
          -water_right_id) %>% 
-  filter(d_scenario >= 2011)
+  filter(d_scenario >= 2011 & d_scenario < (project_year - 1))
 
 # Recode scenario name to be more descriptive.
 diversions <- diversions %>% 
@@ -153,10 +153,17 @@ demand_create_date <- Sys.Date()
 save(demand,
      demand_create_date,
      file = "./output/dwast-demands.RData")
-put_object(file = "./output/dwast-demands.RData",
-          object = "dwast-demands.RData",
-          bucket = "dwr-enf-shiny",
-          multipart = TRUE)
+# put_object(file = "./output/dwast-demands.RData",
+#           object = "dwast-demands.RData",
+#           bucket = "dwr-enf-shiny",
+#           multipart = TRUE)
+
+
+# save demand test set for shorter load times.
+demand <- demand[grepl("N", names(demand))]
+save(demand,
+     demand_create_date,
+     file = "./explore/dwast-demands-test-set.RData")
 
 
 
