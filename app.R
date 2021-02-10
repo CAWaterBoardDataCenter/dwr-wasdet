@@ -115,14 +115,14 @@ ui <- navbarPage(
   # Set theme.
   theme = shinytheme("cerulean"),
   
-  ## Main Tabs. ----
+  ### Main Tabs. ----
   
   # --> Explore tab (plots & tables).
   tabPanel("Explore",
            fluidRow(
              sidebarLayout(
                
-               # SIDEBAR PANEL.
+               ## Sidebar Panel. ----
                sidebarPanel(width = 2,
                             
                             # Select units to display.
@@ -193,13 +193,13 @@ ui <- navbarPage(
                       by <img src="jgy_hex.png", height = "50"></p></center>')
                ),
                
-               ## MAIN PANEL.
+               ## Main Panel. ----
                mainPanel(width = 10,
                          
                          # Plot/Data/Watershed map Tabs.
                          tabsetPanel(type = "pills",
                                      
-                                     # Plot tabs.
+                                     ## Plot tabs. ----
                                      tabPanel("Plots",
                                               fluidRow(
                                                 
@@ -447,9 +447,9 @@ server <- function(input, output, session) {
       mutate(priority = ordered(priority, levels = names(priority_pal)))
   })
   
-  ### OUTPUT. ----
+  ### PLOTS. ----
   
-  ## Supply-Demand Scenario plot (vsd).
+  ## Supply-Demand Scenario plot (vsd). ----
   output$vsd_plot <- renderPlot({
     
     # Validate.
@@ -525,7 +525,7 @@ server <- function(input, output, session) {
     
   }, height = function() plot_height())
   
-  ## Demand By Water Right Type Plot (dbwrt).
+  ## Demand By Water Right Type Plot (dbwrt). ----
   output$dbwrt_plot <- renderPlot({
     
     # Validate.
@@ -581,7 +581,7 @@ server <- function(input, output, session) {
   }, height = function() plot_height()
   )
   
-  ## Demand by Priority plot (dbp).
+  ## Demand by Priority plot (dbp). ----
   output$dbp_plot <- renderPlot({
     
     # Render.
@@ -628,7 +628,7 @@ server <- function(input, output, session) {
   }, height = function() plot_height()
   )
   
-  ## Mini Map.
+  ### MINI MAP. ----
   
   # Filter POD points.
   pod_points <- reactive({
@@ -660,23 +660,35 @@ server <- function(input, output, session) {
                   fillOpacity = 0,
                   label = plot_poly()$huc8_name,
                   labelOptions = labelOptions(textsize = "12px",
-                                              sticky = TRUE)) %>%
-      addCircleMarkers(data = pod_points(),
-                       radius = 4,
-                       fillOpacity = 0.8,
-                       stroke = FALSE,
-                       weight = 2,
-                       fillColor = ~map_wrt_pal(wr_type),
-                       label = pod_points()$wr_id
-      ) %>% 
-      addLegend(position = "topright",
-                pal = map_wrt_pal,
-                values = pod_points()$wr_type,
-                title = "Water Right Type",
-                opacity = 1)
+                                              sticky = TRUE))
   })
   
-  # Demand data table.
+  # Color POD points to match plot legend categories they fall under.
+  
+  observe({
+    fill_color <- ifelse(input$plot_tabs == "Supply-Demand Scenarios", "red",
+                         ifelse(input$plot_tabs == "Demand by Water Right Type", "orange", "black"))
+    
+    leafletProxy(mapId = "mini_map", 
+                 data = pod_points()) %>%
+      clearMarkers() %>%
+      addCircleMarkers(radius = 3,
+                 fillOpacity = 0.8,
+                 stroke = FALSE,
+                 weight = 2,
+                 fillColor = fill_color, 
+                 label = pod_points()$wr_id
+      )
+  })
+  
+  
+  
+  
+  
+  
+  ### DATA TABLES. ----
+  
+  ## Demand data table.
   output$demand_data_table <- renderDataTable({
     demand[[input$huc8_selected]] %>% 
       filter(d_scenario %in% input$d_scene_selected,
