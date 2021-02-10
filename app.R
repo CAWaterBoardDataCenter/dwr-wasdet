@@ -205,17 +205,20 @@ ui <- navbarPage(
                                                 
                                                 # Plot column.
                                                 column(width = 7,
-                                                       tabsetPanel(type = "pills",
+                                                       tabsetPanel(id = "plot_tabs",
+                                                                   type = "pills",
                                                                    
                                                                    # Supply-Demand scenario Plot.
-                                                                   tabPanel("Supply-Demand Scenarios",
+                                                                   tabPanel(title = "Supply-Demand Scenarios",
+                                                                            id = "vsd_tab",
                                                                             fluidRow(
                                                                               plotOutput(outputId = "vsd_plot")
                                                                             )
                                                                    ),
                                                                    
                                                                    # Demand by Water right type plot.
-                                                                   tabPanel("Demand by Water Right Type",
+                                                                   tabPanel(title = "Demand by Water Right Type",
+                                                                            id = "dbwrt_tab",
                                                                             fluidRow(
                                                                               br(),
                                                                               plotOutput(outputId = "dbwrt_plot")
@@ -223,7 +226,8 @@ ui <- navbarPage(
                                                                    ),
                                                                    
                                                                    # Demand by priority plot.
-                                                                   tabPanel("Demand by Priority",
+                                                                   tabPanel(title = "Demand by Priority",
+                                                                            id = "dbp_tab",
                                                                             fluidRow(
                                                                               br(),
                                                                               plotOutput(outputId = "dbp_plot")
@@ -237,7 +241,10 @@ ui <- navbarPage(
                                                        fluidRow(
                                                          h4("Watershed Location and PODs"),
                                                          leafletOutput(outputId = "mini_map",
-                                                                       height = "500px")
+                                                                       height = "500px"),
+                                                         br(),br(),
+                                                         h3("Debug"),
+                                                         textOutput("debug_text")
                                                        )
                                                 )
                                               )
@@ -281,6 +288,10 @@ ui <- navbarPage(
 #### SERVER --------------------------------------------------------------------
 
 server <- function(input, output, session) {
+  
+  ### Debug. ----
+  
+  output$debug_text <- renderText({paste0("You are viewing tab \"", input$plot_tabs, "\"")})
   
   ### Setup. ----
   
@@ -682,7 +693,8 @@ server <- function(input, output, session) {
 
 #### APP -----------------------------------------------------------------------
 
-shinyApp(ui, server)
+shinyApp(ui = ui,
+         server = server)
 
 
 
