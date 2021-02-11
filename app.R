@@ -1,4 +1,4 @@
-### INITIALIZATION -------------------------------------------------------------
+# Initialization -------------------------------------------------------------
 
 ## Load libraries. ----
 if(!("package:shiny" %in% search())) {
@@ -42,13 +42,13 @@ if(!("package:DT" %in% search())) {
 }
 
 
-##### DEBUG #####
+## Debug #####
 if(!("package:reactlog" %in% search())) {
   suppressMessages(library(reactlog))
 }
 reactlog_enable()
 
-## Initialize values. ---
+## Initialize values. ----
 
 # Data source.
 # load_from_s3 <- ifelse(Sys.info()["nodename"] == "Home-iMac.local", FALSE, TRUE)
@@ -94,7 +94,7 @@ wa_supply_pal <- colorRampPalette(wes_palette("Rushmore")[3:4])(3)
 wa_supply_shapes <- c(15, 16, 17)
 
 
-#### UI ------------------------------------------------------------------------
+# UI ------------------------------------------------------------------------
 
 ui <- navbarPage(
   useShinyjs(),
@@ -119,15 +119,14 @@ ui <- navbarPage(
   h2("Under Development. Do not rely on data used in this dashboard until it is officially released.", 
      style = "color:red"),
   
-  ## Main Tabs. ----
-
-  # --> Explore tab (plots & tables).
+  ## Main Tabs.
+  ## Explore. ----
   tabPanel("Explore",
            
            fluidRow(
              sidebarLayout(
                
-               ## Sidebar Panel. ----
+               ### Sidebar Panel. ----
                sidebarPanel(width = 2,
                             
                             # Select units to display.
@@ -198,13 +197,13 @@ ui <- navbarPage(
                       by <img src="jgy_hex.png", height = "50"></p></center>')
                ),
                
-               ## Main Panel. ----
+               ### Main Panel. ----
                mainPanel(width = 10,
                          
                          # Plot/Data/Watershed map Tabs.
                          tabsetPanel(type = "pills",
                                      
-                                     ## Plot tabs. ----
+                                     #### Plot tabs. ----
                                      tabPanel("Plots",
                                               fluidRow(
                                                 
@@ -213,7 +212,7 @@ ui <- navbarPage(
                                                        tabsetPanel(id = "plot_tabs",
                                                                    type = "pills",
                                                                    
-                                                                   # Supply-Demand scenario Plot.
+                                                                   # Supply-Demand Plot.
                                                                    tabPanel(title = "Supply-Demand Scenarios",
                                                                             id = "vsd_tab",
                                                                             fluidRow(
@@ -273,7 +272,7 @@ ui <- navbarPage(
            )
   ), # end fluid row
   
-  # --> About tab (how to use, data sources, etc.)
+  ## About. ----
   tabPanel("About",
            tabPanel("About",
                     h2("What"),
@@ -290,7 +289,7 @@ ui <- navbarPage(
 
 
 
-#### SERVER --------------------------------------------------------------------
+# SERVER --------------------------------------------------------------------
 
 server <- function(input, output, session) {
   
@@ -298,13 +297,13 @@ server <- function(input, output, session) {
   
   output$debug_text <- renderText({paste0("You are viewing tab \"", input$plot_tabs, "\"")})
   
-  ### Setup. ----
+  ## Setup. ----
   
   # Disable units selector until implemented
   disable(id = "units_selected")
   disable(id = "supply_filter")
   
-  ## Helper Functions.
+  ## Helper Functions. ----
   
   # Define plot height function to keep facet panels roughly the same height
   # whether displaying one or two.
@@ -314,7 +313,7 @@ server <- function(input, output, session) {
     
   })
   
-  ### Control Input Selections. ---
+  ## Observers. ----
   
   # Update demand scenario choices.
   observeEvent(input$huc8_selected, {
@@ -357,10 +356,27 @@ server <- function(input, output, session) {
                              selected = choices)
   })
   
+ 
+  # Demand by water right type dataset.
+  wrt_plot_data <- reactive({ 
+    demand[[input$huc8_selected]] %>% 
+      filter(d_scenario %in% input$d_scene_selected,
+             wr_type %in% input$wrt_selected) %>% 
+      group_by(d_scenario, 
+               wr_type, 
+               plot_month = month(plot_date, label = TRUE)) %>%
+      summarize(af_monthly = sum(af_monthly, na.rm = TRUE),
+                af_daily = sum(af_daily, na.rm = TRUE),
+                cfs = sum(cfs, na.rm = TRUE),
+                .groups = "drop")
+  })
   
-  ### Build datasets. ----
+  ### Outputs. ----
   
-  ## Supply exploration dataset. This is where the magic happens.
+  #### Supply-Demand Scenario plot (vsd). ----
+  
+  ###### Build dataset. ----
+  ## This is where the magic happens.
   vsd_plot_data <- reactive({
     bind_rows(
       {
@@ -423,38 +439,7 @@ server <- function(input, output, session) {
     )
   })
   
-  ## Demand by water right type dataset.
-  wrt_plot_data <- reactive({ 
-    demand[[input$huc8_selected]] %>% 
-      filter(d_scenario %in% input$d_scene_selected,
-             wr_type %in% input$wrt_selected) %>% 
-      group_by(d_scenario, 
-               wr_type, 
-               plot_month = month(plot_date, label = TRUE)) %>%
-      summarize(af_monthly = sum(af_monthly, na.rm = TRUE),
-                af_daily = sum(af_daily, na.rm = TRUE),
-                cfs = sum(cfs, na.rm = TRUE),
-                .groups = "drop")
-  })
-  
-  ## Demand by priority dataset.
-  dbp_plot_data <- reactive({
-    demand[[input$huc8_selected]] %>% 
-      filter(d_scenario %in% input$d_scene_selected,
-             wr_type %in% input$wrt_selected) %>% 
-      group_by(d_scenario, 
-               priority, 
-               plot_month = month(plot_date, label = TRUE)) %>%
-      summarize(af_monthly = sum(af_monthly, na.rm = TRUE),
-                af_daily = sum(af_daily, na.rm = TRUE),
-                cfs = sum(cfs, na.rm = TRUE),
-                .groups = "drop") %>% 
-      mutate(priority = ordered(priority, levels = names(priority_pal)))
-  })
-  
-  ### PLOTS. ----
-  
-  ## Supply-Demand Scenario plot (vsd). ----
+  ##### Render plot. ----
   output$vsd_plot <- renderPlot({
     
     # Validate.
@@ -530,7 +515,24 @@ server <- function(input, output, session) {
     
   }, height = function() plot_height())
   
-  ## Demand By Water Right Type Plot (dbwrt). ----
+  #### Demand By Water Right Type Plot (dbwrt). ----
+  
+  ##### Build dataset. ----
+  # Demand by water right type dataset.
+  wrt_plot_data <- reactive({ 
+    demand[[input$huc8_selected]] %>% 
+      filter(d_scenario %in% input$d_scene_selected,
+             wr_type %in% input$wrt_selected) %>% 
+      group_by(d_scenario, 
+               wr_type, 
+               plot_month = month(plot_date, label = TRUE)) %>%
+      summarize(af_monthly = sum(af_monthly, na.rm = TRUE),
+                af_daily = sum(af_daily, na.rm = TRUE),
+                cfs = sum(cfs, na.rm = TRUE),
+                .groups = "drop")
+  })
+  
+  ##### Render plot. ----
   output$dbwrt_plot <- renderPlot({
     
     # Validate.
@@ -586,7 +588,26 @@ server <- function(input, output, session) {
   }, height = function() plot_height()
   )
   
-  ## Demand by Priority plot (dbp). ----
+  #### Demand by Priority plot (dbp). ----
+  
+  ##### Build dataset. ----
+  
+  # Demand by priority dataset.
+  dbp_plot_data <- reactive({
+    demand[[input$huc8_selected]] %>% 
+      filter(d_scenario %in% input$d_scene_selected,
+             wr_type %in% input$wrt_selected) %>% 
+      group_by(d_scenario, 
+               priority, 
+               plot_month = month(plot_date, label = TRUE)) %>%
+      summarize(af_monthly = sum(af_monthly, na.rm = TRUE),
+                af_daily = sum(af_daily, na.rm = TRUE),
+                cfs = sum(cfs, na.rm = TRUE),
+                .groups = "drop") %>% 
+      mutate(priority = ordered(priority, levels = names(priority_pal)))
+  })
+  
+  ##### Render plot. ----
   output$dbp_plot <- renderPlot({
     
     # Render.
@@ -633,7 +654,7 @@ server <- function(input, output, session) {
   }, height = function() plot_height()
   )
   
-  ### MINI MAP. ----
+  #### Mini Map. ----
   
   # Filter POD points.
   pod_points <- reactive({
@@ -685,13 +706,8 @@ server <- function(input, output, session) {
                  label = pod_points()$wr_id
       )
   })
-  
-  
-  
-  
-  
-  
-  ### DATA TABLES. ----
+ 
+  #### Tables. ----
   
   ## Demand data table.
   output$demand_data_table <- renderDataTable({
@@ -708,7 +724,7 @@ server <- function(input, output, session) {
 } # End Server
 
 
-#### APP -----------------------------------------------------------------------
+# APP -----------------------------------------------------------------------
 
 shinyApp(ui = ui,
          server = server)
