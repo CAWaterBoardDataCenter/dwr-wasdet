@@ -50,7 +50,9 @@ reactlog_enable()
 
 ## Initialize values. ----
 
-# Data source.
+# Data source. Currently using data included in repository. In future, will retrieve from
+# AWS S3 bucket.
+
 # load_from_s3 <- ifelse(Sys.info()["nodename"] == "Home-iMac.local", FALSE, TRUE)
 
 ## Load data files. ----
@@ -58,7 +60,7 @@ reactlog_enable()
 # Water Right Info.
 load("./output/dwast-wrinfo.RData")
 
-# Demand data.
+# Demand data. Load smaller test set if on my local machine.
 ifelse(Sys.info()["nodename"] == "Home-iMac.local", 
        load("./explore/dwast-demands-test-set.RData"), 
        load("./output/dwast-demands.RData"))
@@ -102,7 +104,7 @@ ui <- navbarPage(
   # Title.
   title = div(img(src = "DWR-ENF-Logo.png",
                   style = "position: relative; margin:-15px 0px; display:right-align;"),
-              "Water Supply/Demand Exploration Tool"),
+              "DWR-DET: Division of Water Rights Demand Exploration Tool"),
   tags$head(
     tags$style(HTML('.navbar-nav > li > a, .navbar-brand {
                             padding-top:-6px !important; 
@@ -240,14 +242,17 @@ ui <- navbarPage(
                                                        )      
                                                 ),
                                                 
-                                                # Mini-map column
+                                                #### Mini map. ----
                                                 column(width = 5,
                                                        fluidRow(
                                                          h4("Watershed Location and PODs"),
                                                          leafletOutput(outputId = "mini_map",
                                                                        height = "500px"),
                                                          br(),br(),
+                                                         
+                                                         # Debug notes. ----
                                                          h3("Debug"),
+                                                         p("Mini map pod colors under construction"),
                                                          textOutput("debug_text")
                                                        )
                                                 )
@@ -295,7 +300,7 @@ server <- function(input, output, session) {
   
   ### Debug. ----
   
-  output$debug_text <- renderText({paste0("You are viewing tab \"", input$plot_tabs, "\"")})
+  output$debug_text <- renderText({paste0("DEBUG: You are viewing tab \"", input$plot_tabs, "\"")})
   
   ## Setup. ----
   
