@@ -54,20 +54,6 @@ getReporteDivsCSV <- function(cred_file = "credentials.csv",
                    check = TRUE, 
                    extraCapabilities = fprof)
     
-    # Define Chrome options.
-    # eCaps <- list(
-    #     chromeOptions =
-    #         list(prefs = list("profile.default_content_settings.popups" = 0L,
-    #                           "download.prompt_for_download" = FALSE,
-    #                           "directory_upgrade" = TRUE,
-    #                           "download.default_directory" = normalizePath(getwd())))
-    # )
-    
-    # # Create Selenium server.
-    # driver <- rsDriver(port = free_port(),
-    #                    browser= "firefox")#,
-    #                    # chromever = "87.0.4280.88",
-    #                    # extraCapabilities = eCaps    )
     remDr <- driver[["client"]]
     
     # Navigate to CIWQS Login page.
