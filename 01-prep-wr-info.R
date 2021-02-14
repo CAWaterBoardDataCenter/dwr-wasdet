@@ -32,10 +32,10 @@ if(!("package:aws.s3" %in% search())) {
 ### Initialization. ----
 
 ## Switches.
-download_new_wrinfo <- TRUE
-download_new_pods <- TRUE
-save_data_gaps <- TRUE
-report_multi_hucs <- TRUE
+download_new_wrinfo <- FALSE
+download_new_pods <- FALSE
+save_data_gaps <- FALSE
+report_multi_hucs <- FALSE
 
 ## Create project folders if they don't exist.  <-- purrr this!
 
@@ -312,8 +312,16 @@ pods <- pods %>%
   left_join(., wr_info, by = c("wr_id", "huc8_name")) %>% 
   relocate(SHAPE, .after = last_col())
 
+# Make numerical p_year column. Introduces NAs by coercion, but that's ok.
+pods<- pods %>% 
+  mutate(p_year = ifelse(!grepl("\\D", .$priority), 
+                         suppressWarnings(as.numeric(priority)),
+                         NA)) %>% 
+  relocate(p_year, .after = priority)
+  
+
 # Reproject points to st_crs("+proj=longlat +datum=WGS84 +no_defs") (4326).
-# This is projection leaflet likes.
+# This is the projection leaflet likes.
 pods <- st_transform(pods, 4326)
 
 ## Prepare HUC-8 layer. ----

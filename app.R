@@ -13,6 +13,9 @@ if(!("package:shinyjs" %in% search())) {
 if(!("package:shinipsum" %in% search())) {
   suppressMessages(library(shinipsum))
 }
+if(!("package:htmltools" %in% search())) {
+  suppressMessages(library(htmltools))
+}
 if(!("package:ggplot2" %in% search())) {
   suppressMessages(library(ggplot2))
 }
@@ -41,7 +44,6 @@ if(!("package:DT" %in% search())) {
   suppressMessages(library(DT))
 }
 
-
 ## Debug #####
 if(!("package:reactlog" %in% search())) {
   suppressMessages(library(reactlog))
@@ -65,10 +67,8 @@ ifelse(Sys.info()["nodename"] == "Home-iMac.local",
        load("./explore/dwast-demands-test-set.RData"), 
        load("./output/dwast-demands.RData"))
 
-
 # Supply data.
 load("./output/dwast-supplies.RData")
-
 
 ## Define color and shape aesthetics. ----
 
@@ -79,6 +79,8 @@ wa_demand_order <- ordered(c("Junior Post-14",
                              "Environmental Demand"))
 wa_demand_pal <- wes_palettes$GrandBudapest1[c(2, 1, 4, 3)]
 names(wa_demand_pal) <- wa_demand_order
+map_demand_pal <- colorFactor(palette = wa_demand_pal, 
+                                levels = names(wa_demand_pal))
 
 # Water right type.
 plot_wrt_pal <- c(wes_palette("Darjeeling1"), 
@@ -88,15 +90,17 @@ map_wrt_pal <- colorFactor(palette = plot_wrt_pal,
                            domain = wr_info$wr_type)
 
 # Priority.
+priority_order <- c(c(year(now()):1914), "Statement Demand", "Environmental Demand")
 priority_pal <- c(viridis_pal()(length(c(year(now()):1914))), "gray", "black")
-names(priority_pal) <- c(c(year(now()):1914), "Statement Demand", "Environmental Demand")
+names(priority_pal) <- priority_order
+map_priority_pal <- colorFactor(palette = priority_pal, 
+                                levels = names(priority_pal))
 
 # Supply.
 wa_supply_pal <- colorRampPalette(wes_palette("Rushmore")[3:4])(3)
 wa_supply_shapes <- c(15, 16, 17)
 
-
-# UI ------------------------------------------------------------------------
+# UI ---------------------------------------------------------------------------
 
 ui <- navbarPage(
   useShinyjs(),
@@ -291,10 +295,7 @@ ui <- navbarPage(
   selected = "Explore"
 )
 
-
-
-
-# SERVER --------------------------------------------------------------------
+# SERVER -----------------------------------------------------------------------
 
 server <- function(input, output, session) {
   
@@ -587,7 +588,6 @@ server <- function(input, output, session) {
         legend.position = "bottom",
         legend.box = "horizontal",
         legend.direction = "vertical",
-        #  panel.spacing = unit(2, "lines"),
         axis.title.x = element_blank())
     
   }, height = function() plot_height()
@@ -630,7 +630,7 @@ server <- function(input, output, session) {
       # Legend.
       scale_fill_manual(name = "Priority:",
                         values = priority_pal) +
-      guides(fill = guide_legend(ncol = 2)) +
+      guides(fill = guide_legend(ncol = 3)) +
       
       # labels
       labs(title = "Monthly Demand by Priority",
@@ -650,10 +650,6 @@ server <- function(input, output, session) {
         axis.text = element_text(size = rel(1.2)),
         legend.text = element_text(size = rel(1.2)),
         legend.title = element_text(size = rel(1.2)),
-        #  legend.position = "bottom",
-        # legend.box = "horizontal",
-        #  legend.direction = "horizontal",
-        #  panel.spacing = unit(2, "lines"),
         axis.title.x = element_blank())
     
   }, height = function() plot_height()
@@ -661,17 +657,21 @@ server <- function(input, output, session) {
   
   #### Mini Map. ----
   
-  # Filter POD points.
-  pod_points <- reactive({
-    pods %>% 
-      filter(huc8_name %in% input$huc8_selected)
-  })
-  
   # Filter watershed polygon.
   plot_poly <- reactive({
     huc8_layer %>% filter(huc8_name %in% input$huc8_selected)
   })
   
+  # Filter POD points.
+  pod_points <- reactive({
+    pods %>% 
+      filter(huc8_name %in% input$huc8_selected) %>% 
+      mutate(vsd_fill_color = if_else(priority == "Statement Demand",
+                                  "Statement Demand",
+                                      if_else(p_year >= input$priority_selected,
+                                                  "Junior Post-14", "Post-14")))
+  })
+ 
   output$mini_map <- renderLeaflet({
     
     # Validate.
@@ -689,27 +689,65 @@ server <- function(input, output, session) {
                   col = "blue",
                   fill = TRUE,
                   fillOpacity = 0,
-                  label = plot_poly()$huc8_name,
-                  labelOptions = labelOptions(textsize = "12px",
-                                              sticky = TRUE))
+                  # label = plot_poly()$huc8_name,
+                  # labelOptions = labelOptions(textsize = "12px",
+                  #                             sticky = TRUE)
+                  )
   })
   
   # Color POD points to match plot legend categories they fall under.
-  
+ 
   observe({
-    fill_color <- ifelse(input$plot_tabs == "Supply-Demand Scenarios", "red",
-                         ifelse(input$plot_tabs == "Demand by Water Right Type", "orange", "black"))
     
-    leafletProxy(mapId = "mini_map", 
-                 data = pod_points()) %>%
-      clearMarkers() %>%
-      addCircleMarkers(radius = 3,
-                 fillOpacity = 0.8,
-                 stroke = FALSE,
-                 weight = 2,
-                 fillColor = fill_color, 
-                 label = pod_points()$wr_id
-      )
+    ##### vsd plot points. ----
+    if( input$plot_tabs == "Supply-Demand Scenarios" ) {
+ 
+      leafletProxy(mapId = "mini_map", 
+                   data = pod_points()) %>%
+        clearMarkers() %>%
+        addCircleMarkers(radius = 4,
+                         fillOpacity = 0.8,
+                         stroke = FALSE,
+                         weight = 2,
+                         fillColor = ~map_demand_pal(vsd_fill_color), 
+                         label = paste(st_drop_geometry(pod_points())$wr_id,
+                                       st_drop_geometry(pod_points())$owner,
+                                       st_drop_geometry(pod_points())$wr_status)
+        )
+    } else
+      
+      if( input$plot_tabs == "Demand by Water Right Type" ) {
+        
+        leafletProxy(mapId = "mini_map", 
+                     data = pod_points()) %>%
+          clearMarkers() %>%
+          addCircleMarkers(radius = 4,
+                           fillOpacity = 0.8,
+                           stroke = FALSE,
+                           weight = 2,
+                           fillColor = ~map_wrt_pal(wr_type), 
+                           label = paste(st_drop_geometry(pod_points())$wr_id,
+                                         st_drop_geometry(pod_points())$owner,
+                                         st_drop_geometry(pod_points())$wr_status)
+          )
+    } else
+      
+      if( input$plot_tabs == "Demand by Priority" ) {
+        
+        leafletProxy(mapId = "mini_map", 
+                     data = pod_points()) %>%
+          clearMarkers() %>%
+          addCircleMarkers(radius = 4,
+                           fillOpacity = 0.9,
+                           stroke = FALSE,
+                         #  weight = 2,
+                           fillColor = ~map_priority_pal(priority), 
+                           label = ~paste(st_drop_geometry(pod_points())$wr_id,
+                                         st_drop_geometry(pod_points())$owner,
+                                         st_drop_geometry(pod_points())$wr_status)
+          )
+      }
+    
   })
  
   #### Tables. ----
@@ -727,7 +765,6 @@ server <- function(input, output, session) {
   rownames = FALSE)
   
 } # End Server
-
 
 # APP -----------------------------------------------------------------------
 
