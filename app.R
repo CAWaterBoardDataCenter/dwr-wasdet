@@ -13,6 +13,9 @@ if(!("package:shinyjs" %in% search())) {
 if(!("package:shinipsum" %in% search())) {
   suppressMessages(library(shinipsum))
 }
+if(!("package:htmltools" %in% search())) {
+  suppressMessages(library(htmltools))
+}
 if(!("package:ggplot2" %in% search())) {
   suppressMessages(library(ggplot2))
 }
@@ -88,12 +91,17 @@ map_wrt_pal <- colorFactor(palette = plot_wrt_pal,
                            domain = wr_info$wr_type)
 
 # Priority.
+priority_order <- c(c(year(now()):1914), "Statement Demand", "Environmental Demand")
 priority_pal <- c(viridis_pal()(length(c(year(now()):1914))), "gray", "black")
-names(priority_pal) <- c(c(year(now()):1914), "Statement Demand", "Environmental Demand")
+names(priority_pal) <- priority_order
+map_priority_pal <- colorFactor(palette = priority_pal, 
+                                levels = names(priority_pal))
 
 # Supply.
 wa_supply_pal <- colorRampPalette(wes_palette("Rushmore")[3:4])(3)
 wa_supply_shapes <- c(15, 16, 17)
+
+# Define plot order in data.
 
 
 # UI ------------------------------------------------------------------------
@@ -587,7 +595,6 @@ server <- function(input, output, session) {
         legend.position = "bottom",
         legend.box = "horizontal",
         legend.direction = "vertical",
-        #  panel.spacing = unit(2, "lines"),
         axis.title.x = element_blank())
     
   }, height = function() plot_height()
@@ -650,10 +657,6 @@ server <- function(input, output, session) {
         axis.text = element_text(size = rel(1.2)),
         legend.text = element_text(size = rel(1.2)),
         legend.title = element_text(size = rel(1.2)),
-        #  legend.position = "bottom",
-        # legend.box = "horizontal",
-        #  legend.direction = "horizontal",
-        #  panel.spacing = unit(2, "lines"),
         axis.title.x = element_blank())
     
   }, height = function() plot_height()
@@ -697,19 +700,49 @@ server <- function(input, output, session) {
   # Color POD points to match plot legend categories they fall under.
   
   observe({
-    fill_color <- ifelse(input$plot_tabs == "Supply-Demand Scenarios", "red",
-                         ifelse(input$plot_tabs == "Demand by Water Right Type", "orange", "black"))
     
-    leafletProxy(mapId = "mini_map", 
-                 data = pod_points()) %>%
-      clearMarkers() %>%
-      addCircleMarkers(radius = 3,
-                 fillOpacity = 0.8,
-                 stroke = FALSE,
-                 weight = 2,
-                 fillColor = fill_color, 
-                 label = pod_points()$wr_id
-      )
+    if( input$plot_tabs == "Supply-Demand Scenarios" ) {
+      
+      leafletProxy(mapId = "mini_map", 
+                   data = pod_points()) %>%
+        clearMarkers() %>%
+        addCircleMarkers(radius = 4,
+                         fillOpacity = 0.8,
+                         stroke = FALSE,
+                         weight = 2,
+                         fillColor = "red", 
+                         label = pod_points()$wr_id
+        )
+    } else
+      
+      if( input$plot_tabs == "Demand by Water Right Type" ) {
+        
+        leafletProxy(mapId = "mini_map", 
+                     data = pod_points()) %>%
+          clearMarkers() %>%
+          addCircleMarkers(radius = 4,
+                           fillOpacity = 0.8,
+                           stroke = FALSE,
+                           weight = 2,
+                           fillColor = ~map_wrt_pal(wr_type), 
+                           label = pod_points()$wr_id
+          )
+    } else
+      
+      if( input$plot_tabs == "Demand by Priority" ) {
+        
+        leafletProxy(mapId = "mini_map", 
+                     data = pod_points()) %>%
+          clearMarkers() %>%
+          addCircleMarkers(radius = 4,
+                           fillOpacity = 0.9,
+                           stroke = FALSE,
+                         #  weight = 2,
+                           fillColor = ~map_priority_pal(priority), 
+                           label = pod_points()$wr_id
+          )
+      }
+    
   })
  
   #### Tables. ----
