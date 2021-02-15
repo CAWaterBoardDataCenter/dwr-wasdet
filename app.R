@@ -77,10 +77,10 @@ wa_demand_order <- ordered(c("Junior Post-14",
                              "Post-14",
                              "Statement Demand",
                              "Environmental Demand"))
-wa_demand_pal <- wes_palettes$GrandBudapest1[c(2, 1, 4, 3)]
+wa_demand_pal <- c(wes_palettes$GrandBudapest1[c(2, 1)], "gray", "black")
 names(wa_demand_pal) <- wa_demand_order
 map_demand_pal <- colorFactor(palette = wa_demand_pal, 
-                                levels = names(wa_demand_pal))
+                              levels = names(wa_demand_pal))
 
 # Water right type.
 plot_wrt_pal <- c(wes_palette("Darjeeling1"), 
@@ -251,12 +251,13 @@ ui <- navbarPage(
                                                        fluidRow(
                                                          h4("Watershed Location and PODs"),
                                                          leafletOutput(outputId = "mini_map",
-                                                                       height = "500px"),
+                                                                       height = "500px",
+                                                                       width = "95%"),
                                                          br(),br(),
                                                          
                                                          # Debug notes. ----
                                                          h3("Debug"),
-                                                         p("Mini map pod colors under construction"),
+                                                        
                                                          textOutput("debug_text")
                                                        )
                                                 )
@@ -362,7 +363,7 @@ server <- function(input, output, session) {
                              selected = choices)
   })
   
- 
+  
   # Demand by water right type dataset.
   wrt_plot_data <- reactive({ 
     demand[[input$huc8_selected]] %>% 
@@ -474,7 +475,7 @@ server <- function(input, output, session) {
                 linetype = "dashed") +
       
       # X axis format.
-      scale_x_date(date_labels = "%m/%d/%y",
+      scale_x_date(date_labels = "%b %d",
                    date_minor_breaks = "1 month") +
       
       # Y axis format.
@@ -667,11 +668,11 @@ server <- function(input, output, session) {
     pods %>% 
       filter(huc8_name %in% input$huc8_selected) %>% 
       mutate(vsd_fill_color = if_else(priority == "Statement Demand",
-                                  "Statement Demand",
+                                      "Statement Demand",
                                       if_else(p_year >= input$priority_selected,
-                                                  "Junior Post-14", "Post-14")))
+                                              "Junior Post-14", "Post-14")))
   })
- 
+  
   output$mini_map <- renderLeaflet({
     
     # Validate.
@@ -692,64 +693,88 @@ server <- function(input, output, session) {
                   # label = plot_poly()$huc8_name,
                   # labelOptions = labelOptions(textsize = "12px",
                   #                             sticky = TRUE)
-                  )
+      )
   })
   
   # Color POD points to match plot legend categories they fall under.
- 
+  
   observe({
+    
+    update_points <- pod_points()
+    
+    mini_map_labs <- lapply(seq(nrow(update_points)), function(i) {
+      paste0('Water Right ID: ', st_drop_geometry(update_points[i, "wr_id"]), '<br>',
+             'Owner: ', st_drop_geometry(update_points[i, "owner"]), '<br>',
+             'Water Right Type: ', st_drop_geometry(update_points[i, "wr_type"]), '<br>',
+             'Priority: ' , st_drop_geometry(update_points[i, "priority"]), '<br>',
+             'Status: ', st_drop_geometry(update_points[i, "wr_status"])
+      )
+    })
     
     ##### vsd plot points. ----
     if( input$plot_tabs == "Supply-Demand Scenarios" ) {
- 
+      
       leafletProxy(mapId = "mini_map", 
-                   data = pod_points()) %>%
+                   data = update_points) %>%
         clearMarkers() %>%
+        clearControls() %>%
         addCircleMarkers(radius = 4,
                          fillOpacity = 0.8,
                          stroke = FALSE,
                          weight = 2,
                          fillColor = ~map_demand_pal(vsd_fill_color), 
-                         label = paste(st_drop_geometry(pod_points())$wr_id,
-                                       st_drop_geometry(pod_points())$owner,
-                                       st_drop_geometry(pod_points())$wr_status)
-        )
+                         label = lapply(mini_map_labs, HTML)
+        ) %>% 
+        addLegend(position = "topright",
+                  colors = wa_demand_pal[1:3],
+                  labels = c(paste(input$priority_selected, "& Junior Post-14 Demand"),
+                             paste(as.numeric(input$priority_selected) -1, "& Senior Post-14 Demand"),
+                             "Statement Demand"),
+                  title = "Demand Type",
+                  opacity = 1)
+    } else
+ 
+    #### dbwrt plot points. ----
+    if( input$plot_tabs == "Demand by Water Right Type" ) {
+      
+      leafletProxy(mapId = "mini_map", 
+                   data = update_points) %>%
+        clearMarkers() %>% 
+        clearControls() %>% 
+        addCircleMarkers(radius = 4,
+                         fillOpacity = 0.8,
+                         stroke = FALSE,
+                         weight = 2,
+                         fillColor = ~map_wrt_pal(wr_type), 
+                         label = lapply(mini_map_labs, HTML)
+        ) %>% 
+        addLegend(position = "topright",
+                  pal = map_wrt_pal,
+                  values = update_points$wr_type,
+                  title = "Water Right Type",
+                  opacity = 1)
     } else
       
-      if( input$plot_tabs == "Demand by Water Right Type" ) {
-        
-        leafletProxy(mapId = "mini_map", 
-                     data = pod_points()) %>%
-          clearMarkers() %>%
-          addCircleMarkers(radius = 4,
-                           fillOpacity = 0.8,
-                           stroke = FALSE,
-                           weight = 2,
-                           fillColor = ~map_wrt_pal(wr_type), 
-                           label = paste(st_drop_geometry(pod_points())$wr_id,
-                                         st_drop_geometry(pod_points())$owner,
-                                         st_drop_geometry(pod_points())$wr_status)
-          )
-    } else
-      
+      #### vbp plot points. ----
       if( input$plot_tabs == "Demand by Priority" ) {
         
         leafletProxy(mapId = "mini_map", 
-                     data = pod_points()) %>%
+                     data = update_points) %>%
           clearMarkers() %>%
+          clearControls() %>%
           addCircleMarkers(radius = 4,
                            fillOpacity = 0.9,
                            stroke = FALSE,
-                         #  weight = 2,
+                           #  weight = 2,
                            fillColor = ~map_priority_pal(priority), 
-                           label = ~paste(st_drop_geometry(pod_points())$wr_id,
-                                         st_drop_geometry(pod_points())$owner,
-                                         st_drop_geometry(pod_points())$wr_status)
-          )
+                           label = lapply(mini_map_labs, HTML)
+          ) %>% 
+          addControl(html = "Legend not provided. Too many categories.",
+                     position = "topright")
       }
     
   })
- 
+  
   #### Tables. ----
   
   ## Demand data table.
