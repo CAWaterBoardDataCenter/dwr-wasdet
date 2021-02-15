@@ -1,9 +1,3 @@
----
-editor_options: 
-  markdown: 
-    wrap: 80
----
-
 # DWR-DET: Division of Water Rights Demand Exploration Tool
 
 > Explore California's Surface Water Demands
