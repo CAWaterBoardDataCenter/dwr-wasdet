@@ -783,7 +783,7 @@ server <- function(input, output, session) {
     demand[[input$huc8_selected]] %>% 
       filter(d_scenario %in% input$d_scene_selected,
              wr_type %in% input$wrt_selected) %>% 
-      mutate(plot_date = month(plot_date)) %>% 
+      mutate(plot_date = as.integer(month(plot_date))) %>% 
       rename(month = plot_date) %>% 
       select(-p_year)
   },
