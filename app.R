@@ -203,7 +203,7 @@ ui <- navbarPage(
                       by <a href="https://img1.looper.com/img/gallery/keanu-reeves-head-turning-comment-on-the-script-for-matrix/intro-1569601235.jpg">
                       <img src="jgy_hex.png", height = "50"></p></center></a>')
                ),
-         
+
                ### Main Panel. ----
                mainPanel(width = 10,
                          
