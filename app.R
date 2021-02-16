@@ -1,61 +1,59 @@
 # Initialization -------------------------------------------------------------
 
 ## Load libraries. ----
-if(!("package:shiny" %in% search())) {
+if (!("package:shiny" %in% search())) {
   suppressMessages(library(shiny))
 }
-if(!("package:shinythemes" %in% search())) {
+if (!("package:shinythemes" %in% search())) {
   suppressMessages(library(shinythemes))
 }
-if(!("package:shinyjs" %in% search())) {
+if (!("package:shinyjs" %in% search())) {
   suppressMessages(library(shinyjs))
 }
-if(!("package:shinipsum" %in% search())) {
+if (!("package:shinipsum" %in% search())) {
   suppressMessages(library(shinipsum))
 }
-if(!("package:htmltools" %in% search())) {
+if (!("package:htmltools" %in% search())) {
   suppressMessages(library(htmltools))
 }
-if(!("package:ggplot2" %in% search())) {
+if (!("package:ggplot2" %in% search())) {
   suppressMessages(library(ggplot2))
 }
-if(!("package:leaflet" %in% search())) {
+if (!("package:leaflet" %in% search())) {
   suppressMessages(library(leaflet))
 }
-if(!("package:sf" %in% search())) {
+if (!("package:sf" %in% search())) {
   suppressMessages(library(sf))
 }
-if(!("package:wesanderson" %in% search())) {
+if (!("package:wesanderson" %in% search())) {
   suppressMessages(library(wesanderson))
 }
-if(!("package:dplyr" %in% search())) {
+if (!("package:dplyr" %in% search())) {
   suppressMessages(library(dplyr))
 }
-if(!("package:spdplyr" %in% search())) {
+if (!("package:spdplyr" %in% search())) {
   suppressMessages(library(spdplyr))
 }
-if(!("package:lubridate" %in% search())) {
+if (!("package:lubridate" %in% search())) {
   suppressMessages(library(lubridate))
 }
-if(!("package:scales" %in% search())) {
+if (!("package:scales" %in% search())) {
   suppressMessages(library(scales))
 }
-if(!("package:DT" %in% search())) {
+if (!("package:DT" %in% search())) {
   suppressMessages(library(DT))
 }
 
 ## Debug #####
-if(!("package:reactlog" %in% search())) {
+if (!("package:reactlog" %in% search())) {
   suppressMessages(library(reactlog))
 }
 reactlog_enable()
 
 ## Initialize values. ----
 
-# Data source. Currently using data included in repository. In future, will retrieve from
-# AWS S3 bucket.
-
-# load_from_s3 <- ifelse(Sys.info()["nodename"] == "Home-iMac.local", FALSE, TRUE)
+# Data source. Currently using data included in repository. In future, will
+# retrieve from AWS S3 bucket.
 
 ## Load data files. ----
 
@@ -63,8 +61,8 @@ reactlog_enable()
 load("./output/dwast-wrinfo.RData")
 
 # Demand data. Load smaller test set if on my local machine.
-ifelse(Sys.info()["nodename"] == "Home-iMac.local", 
-       load("./explore/dwast-demands-test-set.RData"), 
+ifelse(Sys.info()["nodename"] == "Home-iMac.local",
+       load("./explore/dwast-demands-test-set.RData"),
        load("./output/dwast-demands.RData"))
 
 # Supply data.
@@ -79,36 +77,44 @@ wa_demand_order <- ordered(c("Junior Post-14",
                              "Environmental Demand"))
 wa_demand_pal <- c(wes_palettes$GrandBudapest1[c(2, 1)], "#BEBEBE", "#000000")
 names(wa_demand_pal) <- wa_demand_order
-map_demand_pal <- colorFactor(palette = wa_demand_pal, 
+map_demand_pal <- colorFactor(palette = wa_demand_pal,
                               levels = names(wa_demand_pal))
 
 # Water right type.
-plot_wrt_pal <- c(wes_palette("Darjeeling1"), 
+plot_wrt_pal <- c(wes_palette("Darjeeling1"),
                   wes_palette("Darjeeling2"))[2:10]
 names(plot_wrt_pal) <- sort(unique(wr_info$wr_type))
-map_wrt_pal <- colorFactor(palette = plot_wrt_pal, 
+map_wrt_pal <- colorFactor(palette = plot_wrt_pal,
                            domain = wr_info$wr_type)
 
 # Priority.
-priority_order <- c(c(year(now()):1914), "Statement Demand", "Environmental Demand")
-priority_pal <- c(viridis_pal()(length(c(year(now()):1914))), "#BEBEBE", "#000000")
+priority_order <- c(c(year(now()):1914),
+                    "Statement Demand", "Environmental Demand")
+priority_pal <- c(viridis_pal()(length(c(year(now()):1914))),
+                  "#BEBEBE", "#000000")
 names(priority_pal) <- priority_order
-map_priority_pal <- colorFactor(palette = priority_pal, 
+map_priority_pal <- colorFactor(palette = priority_pal,
                                 levels = names(priority_pal))
 
 # Supply.
 wa_supply_pal <- colorRampPalette(wes_palette("Rushmore")[3:4])(3)
 wa_supply_shapes <- c(15, 16, 17)
 
+# App title.
+app_title <- paste("DWR-WaSDET: Division of Water Rights",
+                   "Water Supply/Demand Exploration Tool")
+
 # UI ---------------------------------------------------------------------------
 
 ui <- navbarPage(
   useShinyjs(),
-  
+
   # Title.
   title = div(img(src = "DWR-ENF-Logo.png",
-                  style = "position: relative; margin:-15px 0px; display:right-align;"),
-              "DWR-WaSDET: Division of Water Rights Water Supply/Demand Exploration Tool"),
+                  style = "position: relative;
+                  margin:-15px 0px;
+                  display:right-align;"),
+              app_title),
   tags$head(
     tags$style(HTML('.navbar-nav > li > a, .navbar-brand {
                             padding-top:-6px !important; 
@@ -122,7 +128,8 @@ ui <- navbarPage(
   theme = shinytheme("cerulean"),
   
   # Prototype Warning.
-  h2("Under Development. Do not rely on data used in this dashboard until it is officially released.", 
+  h4(paste("Under Development. Do not rely on data used in this dashboard",
+           "until it is officially released."), 
      style = "color:red"),
   
   ## Main Tabs.
@@ -323,6 +330,25 @@ server <- function(input, output, session) {
   
   ## Observers. ----
   
+  # Control input selectors.
+  observe({
+    if (input$plot_tabs == "Supply-Demand Scenarios") {
+      showElement(id = "s_scene_selected")
+      showElement(id = "priority_selected")
+      hideElement(id = "wrt_selected")
+    } else
+      if (input$plot_tabs == "Demand by Water Right Type") {
+        hideElement(id = "s_scene_selected")
+        hideElement(id = "priority_selected")
+        showElement(id = "wrt_selected")
+      } else
+        if (input$plot_tabs == "Demand by Priority") {
+          hideElement(id = "s_scene_selected")
+          hideElement(id = "priority_selected")
+          showElement(id = "wrt_selected")
+        }
+   })
+
   # Update demand scenario choices.
   observeEvent(input$huc8_selected, {
     choices <- sort(unique(demand[[input$huc8_selected]]$d_scenario))
@@ -364,20 +390,6 @@ server <- function(input, output, session) {
                              selected = choices)
   })
   
-  
-  # Demand by water right type dataset.
-  wrt_plot_data <- reactive({ 
-    demand[[input$huc8_selected]] %>% 
-      filter(d_scenario %in% input$d_scene_selected,
-             wr_type %in% input$wrt_selected) %>% 
-      group_by(d_scenario, 
-               wr_type, 
-               plot_month = month(plot_date, label = TRUE)) %>%
-      summarize(af_monthly = sum(af_monthly, na.rm = TRUE),
-                af_daily = sum(af_daily, na.rm = TRUE),
-                cfs = sum(cfs, na.rm = TRUE),
-                .groups = "drop")
-  })
   
   ### Outputs. ----
   
