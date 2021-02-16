@@ -77,7 +77,7 @@ wa_demand_order <- ordered(c("Junior Post-14",
                              "Post-14",
                              "Statement Demand",
                              "Environmental Demand"))
-wa_demand_pal <- c(wes_palettes$GrandBudapest1[c(2, 1)], "gray", "black")
+wa_demand_pal <- c(wes_palettes$GrandBudapest1[c(2, 1)], "#BEBEBE", "#000000")
 names(wa_demand_pal) <- wa_demand_order
 map_demand_pal <- colorFactor(palette = wa_demand_pal, 
                               levels = names(wa_demand_pal))
@@ -91,7 +91,7 @@ map_wrt_pal <- colorFactor(palette = plot_wrt_pal,
 
 # Priority.
 priority_order <- c(c(year(now()):1914), "Statement Demand", "Environmental Demand")
-priority_pal <- c(viridis_pal()(length(c(year(now()):1914))), "gray", "black")
+priority_pal <- c(viridis_pal()(length(c(year(now()):1914))), "#BEBEBE", "#000000")
 names(priority_pal) <- priority_order
 map_priority_pal <- colorFactor(palette = priority_pal, 
                                 levels = names(priority_pal))
@@ -108,7 +108,7 @@ ui <- navbarPage(
   # Title.
   title = div(img(src = "DWR-ENF-Logo.png",
                   style = "position: relative; margin:-15px 0px; display:right-align;"),
-              "DWR-DET: Division of Water Rights Demand Exploration Tool"),
+              "DWR-WaSDET: Division of Water Rights Water Supply/Demand Exploration Tool"),
   tags$head(
     tags$style(HTML('.navbar-nav > li > a, .navbar-brand {
                             padding-top:-6px !important; 
@@ -183,7 +183,7 @@ ui <- navbarPage(
                               
                               # Select priority year to slice for vsd_plot.
                               selectInput(inputId = "priority_selected",
-                                          label = "Select Demand Priority Year to Slice:",
+                                          label = "Select Demand Priority Year:",
                                           choices = NULL,
                                           selected = NULL,
                                           multiple = FALSE),
@@ -200,9 +200,10 @@ ui <- navbarPage(
                             HTML('<center><p>Built with</p>
                       <p><img src="shiny.png", height = "50">
                       and <img src="RStudio.png", height = "50">
-                      by <img src="jgy_hex.png", height = "50"></p></center>')
+                      by <a href="https://img1.looper.com/img/gallery/keanu-reeves-head-turning-comment-on-the-script-for-matrix/intro-1569601235.jpg">
+                      <img src="jgy_hex.png", height = "50"></p></center></a>')
                ),
-               
+
                ### Main Panel. ----
                mainPanel(width = 10,
                          
