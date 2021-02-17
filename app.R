@@ -1,6 +1,6 @@
 # Initialization -------------------------------------------------------------
 
-## Load libraries. ----
+# Load libraries. ----
 if (!("package:shiny" %in% search())) {
   suppressMessages(library(shiny))
 }
@@ -44,18 +44,21 @@ if (!("package:DT" %in% search())) {
   suppressMessages(library(DT))
 }
 
-## Debug #####
-if (!("package:reactlog" %in% search())) {
-  suppressMessages(library(reactlog))
+# Debug #####
+if (Sys.info()["nodename"] == "Home-iMac.local") {
+  source("./explore/test_variable_values.R")
+  if (!("package:reactlog" %in% search())) {
+    suppressMessages(library(reactlog))
+  }
+  reactlog_enable()
 }
-reactlog_enable()
 
-## Initialize values. ----
+# Initialize values. ----
 
 # Data source. Currently using data included in repository. In future, will
 # retrieve from AWS S3 bucket.
 
-## Load data files. ----
+# Load data files. ----
 
 # Water Right Info.
 load("./output/dwast-wrinfo.RData")
@@ -68,7 +71,7 @@ ifelse(Sys.info()["nodename"] == "Home-iMac.local",
 # Supply data.
 load("./output/dwast-supplies.RData")
 
-## Define color and shape aesthetics. ----
+# Define color and shape aesthetics. ----
 
 # Demand.
 wa_demand_order <- ordered(c("Junior Post-14",
@@ -100,21 +103,19 @@ map_priority_pal <- colorFactor(palette = priority_pal,
 wa_supply_pal <- colorRampPalette(wes_palette("Rushmore")[3:4])(3)
 wa_supply_shapes <- c(15, 16, 17)
 
-# App title.
-app_title <- paste("DWR-WaSDET: Division of Water Rights",
-                   "Water Supply/Demand Exploration Tool")
 
 # UI ---------------------------------------------------------------------------
 
 ui <- navbarPage(
   useShinyjs(),
-
+  
   # Title.
   title = div(img(src = "DWR-ENF-Logo.png",
                   style = "position: relative;
                   margin:-15px 0px;
                   display:right-align;"),
-              app_title),
+              paste("DWR-WaSDET: Division of Water Rights",
+                    "Water Supply/Demand Exploration Tool")),
   tags$head(
     tags$style(HTML('.navbar-nav > li > a, .navbar-brand {
                             padding-top:-6px !important; 
@@ -133,16 +134,16 @@ ui <- navbarPage(
      style = "color:red"),
   
   ## Main Tabs.
-  ## Explore. ----
+  # Explore. ----
   tabPanel("Explore",
            
            fluidRow(
              sidebarLayout(
                
-               ### Sidebar Panel. ----
+               ## Sidebar Panel. ----
                sidebarPanel(width = 2,
                             
-                            # Select units to display.
+                            ## Select units to display. ----
                             radioButtons(inputId = "units_selected",
                                          label = "Select Units:",
                                          choiceNames = list(
@@ -156,21 +157,21 @@ ui <- navbarPage(
                                          selected = "cfs"
                             ),
                             
-                            # Select HUC-8 watershed.
+                            ### Select HUC-8 watershed. ----
                             selectInput(inputId = "huc8_selected",
                                         label = "Select HUC-8 Watershed:",
-                                        choices = sort(names(demand)),
-                                        selected = "North Fork American",
+                                        choices = NULL,
+                                        selected = NULL,
                                         multiple = FALSE
                             ),
                             
-                            # Filter for watersheds with supply information.
+                            ### Filter for watersheds with supply information. ----
                             checkboxInput(inputId = "supply_filter",
                                           label = "Filter for watersheds with available supply information",
                                           value = FALSE
                             ),
                             
-                            # Select demand scenario(s).
+                            ### Select demand scenario(s). ----
                             selectizeInput(inputId = "d_scene_selected",
                                            label = "Select Up To Two Demand Scenarios:",
                                            choices = NULL,
@@ -178,8 +179,12 @@ ui <- navbarPage(
                                            multiple = TRUE,
                                            options = list(maxItems = 2)
                             ),
+                            
+                            ### Conditional Inputs. ----
+                            
                             wellPanel(
-                              # Select supply scenario(s) for vsd_plot.
+                              
+                              ### #Select supply scenario(s) for vsd_plot. ----
                               selectizeInput(inputId = "s_scene_selected",
                                              label = "Select Up To Three Supply Scenarios:",
                                              choices = NULL,
@@ -188,14 +193,14 @@ ui <- navbarPage(
                                              options = list(maxItems = 3)
                               ),
                               
-                              # Select priority year to slice for vsd_plot.
+                              #### Select priority year to slice for vsd_plot. ----
                               selectInput(inputId = "priority_selected",
                                           label = "Select Demand Priority Year:",
                                           choices = NULL,
                                           selected = NULL,
                                           multiple = FALSE),
                               
-                              # Select water right types to include in dbwrt_plot.
+                              #### Select water right types to include in dbwrt_plot. ----
                               checkboxGroupInput(inputId = "wrt_selected",
                                                  label = "Select Water Right Type(s) to Display:",
                                                  choices = NULL,
@@ -210,14 +215,14 @@ ui <- navbarPage(
                       by <a href="https://img1.looper.com/img/gallery/keanu-reeves-head-turning-comment-on-the-script-for-matrix/intro-1569601235.jpg">
                       <img src="jgy_hex.png", height = "50"></p></center></a>')
                ),
-
-               ### Main Panel. ----
+               
+               ## Main Panel. ----
                mainPanel(width = 10,
                          
                          # Plot/Data/Watershed map Tabs.
                          tabsetPanel(type = "pills",
                                      
-                                     #### Plot tabs. ----
+                                     ### Plot tabs. ----
                                      tabPanel("Plots",
                                               fluidRow(
                                                 
@@ -226,7 +231,7 @@ ui <- navbarPage(
                                                        tabsetPanel(id = "plot_tabs",
                                                                    type = "pills",
                                                                    
-                                                                   # Supply-Demand Plot.
+                                                                   ### Supply-Demand plot tab. ----
                                                                    tabPanel(title = "Supply-Demand Scenarios",
                                                                             id = "vsd_tab",
                                                                             fluidRow(
@@ -234,7 +239,7 @@ ui <- navbarPage(
                                                                             )
                                                                    ),
                                                                    
-                                                                   # Demand by Water right type plot.
+                                                                   ### Demand by Water right type plot tab. ----
                                                                    tabPanel(title = "Demand by Water Right Type",
                                                                             id = "dbwrt_tab",
                                                                             fluidRow(
@@ -243,7 +248,7 @@ ui <- navbarPage(
                                                                             )
                                                                    ),
                                                                    
-                                                                   # Demand by priority plot.
+                                                                   ###Demand by priority plot tab. ----
                                                                    tabPanel(title = "Demand by Priority",
                                                                             id = "dbp_tab",
                                                                             fluidRow(
@@ -254,7 +259,7 @@ ui <- navbarPage(
                                                        )      
                                                 ),
                                                 
-                                                #### Mini map. ----
+                                                ## Mini map column. ----
                                                 column(width = 5,
                                                        fluidRow(
                                                          h4("Watershed Location and PODs"),
@@ -263,9 +268,9 @@ ui <- navbarPage(
                                                                        width = "95%"),
                                                          br(),br(),
                                                          
-                                                         # Debug notes. ----
+                                                         ### Debug notes. ----
                                                          h3("Debug"),
-                                                        
+                                                         
                                                          textOutput("debug_text")
                                                        )
                                                 )
@@ -308,29 +313,29 @@ ui <- navbarPage(
 
 server <- function(input, output, session) {
   
-  ### Debug. ----
+  # Debug. ----
   
-  output$debug_text <- renderText({paste0("DEBUG: You are viewing tab \"", input$plot_tabs, "\"")})
+  output$debug_text <- renderText({ paste0("DEBUG: input$supply_filter is: ", 
+                                           input$supply_filter) })
   
-  ## Setup. ----
+  # Setup. ----
   
   # Disable units selector until implemented
   disable(id = "units_selected")
-  disable(id = "supply_filter")
+  #  disable(id = "supply_filter")
   
-  ## Helper Functions. ----
+  # Helper Functions. ----
   
   # Define plot height function to keep facet panels roughly the same height
   # whether displaying one or two.
   plot_height <- reactive({
     ifelse(length(input$d_scene_selected) == 1, 480,
            ifelse(length(input$d_scene_selected) == 2, 835, "auto"))
-    
   })
   
-  ## Observers. ----
+  # Observers. ----
   
-  # Control input selectors.
+  ## Control input selectors. ----
   observe({
     if (input$plot_tabs == "Supply-Demand Scenarios") {
       showElement(id = "s_scene_selected")
@@ -347,9 +352,22 @@ server <- function(input, output, session) {
           hideElement(id = "priority_selected")
           showElement(id = "wrt_selected")
         }
-   })
-
-  # Update demand scenario choices.
+  })
+  
+  ## Filter for watersheds that have supply data. ----
+  observeEvent(input$supply_filter, {
+    if (input$supply_filter) { 
+      choices <- sort(names(demand)[names(demand) %in% supply$huc8_name]) 
+    } else { 
+      choices <- sort(names(demand))
+    }
+    updateSelectInput(session,
+                      inputId = "huc8_selected",
+                      choices = choices,
+                      selected = "North Fork American")
+  })
+  
+  ## Update demand scenario choices. ----
   observeEvent(input$huc8_selected, {
     choices <- sort(unique(demand[[input$huc8_selected]]$d_scenario))
     updateSelectizeInput(session, 
@@ -358,7 +376,7 @@ server <- function(input, output, session) {
                          selected = "Reported Diversions - 2019")
   })
   
-  # Update supply scenario choices.
+  ## Update supply scenario choices. ----
   observeEvent(input$huc8_selected, {
     choices <- sort(unique(filter(supply, 
                                   huc8_name %in% input$huc8_selected)$s_scenario))
@@ -369,7 +387,7 @@ server <- function(input, output, session) {
                                       "Historic: Estimated Mean Unimpaired Flow at AMA, Critical Year"))
   })
   
-  # Update priority year choices.
+  ## Update priority year choices. ----
   py_choice_list <- reactive({
     sort(na.omit(unique(demand[[input$huc8_selected]]$p_year)), decreasing = TRUE)
   })
@@ -381,7 +399,7 @@ server <- function(input, output, session) {
                       selected = sample(choices, 1))
   })
   
-  # Update water right type choices.
+  ## Update water right type choices. ----
   observeEvent(input$huc8_selected, {
     choices <- unique(demand[[input$huc8_selected]]$wr_type)
     updateCheckboxGroupInput(session = session, 
@@ -391,11 +409,11 @@ server <- function(input, output, session) {
   })
   
   
-  ### Outputs. ----
+  # Outputs. ----
   
-  #### Supply-Demand Scenario plot (vsd). ----
+  ## Supply-Demand Scenario plot (vsd). ----
   
-  ###### Build dataset. ----
+  ### Build dataset. ----
   ## This is where the magic happens.
   vsd_plot_data <- reactive({
     bind_rows(
@@ -459,7 +477,7 @@ server <- function(input, output, session) {
     )
   })
   
-  ##### Render plot. ----
+  ### Render plot. ----
   output$vsd_plot <- renderPlot({
     
     # Validate.
@@ -535,9 +553,9 @@ server <- function(input, output, session) {
     
   }, height = function() plot_height())
   
-  #### Demand By Water Right Type Plot (dbwrt). ----
+  ## Demand By Water Right Type Plot (dbwrt). ----
   
-  ##### Build dataset. ----
+  ### Build dataset. ----
   # Demand by water right type dataset.
   wrt_plot_data <- reactive({ 
     demand[[input$huc8_selected]] %>% 
@@ -552,7 +570,7 @@ server <- function(input, output, session) {
                 .groups = "drop")
   })
   
-  ##### Render plot. ----
+  ### Render plot. ----
   output$dbwrt_plot <- renderPlot({
     
     # Validate.
@@ -607,9 +625,9 @@ server <- function(input, output, session) {
   }, height = function() plot_height()
   )
   
-  #### Demand by Priority plot (dbp). ----
+  ## Demand by Priority plot (dbp). ----
   
-  ##### Build dataset. ----
+  ### Build dataset. ----
   
   # Demand by priority dataset.
   dbp_plot_data <- reactive({
@@ -626,7 +644,7 @@ server <- function(input, output, session) {
       mutate(priority = ordered(priority, levels = names(priority_pal)))
   })
   
-  ##### Render plot. ----
+  ### Render plot. ----
   output$dbp_plot <- renderPlot({
     
     # Render.
@@ -669,7 +687,7 @@ server <- function(input, output, session) {
   }, height = function() plot_height()
   )
   
-  #### Mini Map. ----
+  ## Mini Map. ----
   
   # Filter watershed polygon.
   plot_poly <- reactive({
@@ -702,10 +720,7 @@ server <- function(input, output, session) {
                   weight = 3,
                   col = "blue",
                   fill = TRUE,
-                  fillOpacity = 0,
-                  # label = plot_poly()$huc8_name,
-                  # labelOptions = labelOptions(textsize = "12px",
-                  #                             sticky = TRUE)
+                  fillOpacity = 0
       )
   })
   
@@ -724,7 +739,7 @@ server <- function(input, output, session) {
       )
     })
     
-    ##### vsd plot points. ----
+    ### vsd plot points. ----
     if( input$plot_tabs == "Supply-Demand Scenarios" ) {
       
       leafletProxy(mapId = "mini_map", 
@@ -746,8 +761,8 @@ server <- function(input, output, session) {
                   title = "Demand Type",
                   opacity = 1)
     } else
- 
-    #### dbwrt plot points. ----
+      
+      ## dbwrt plot points. ----
     if( input$plot_tabs == "Demand by Water Right Type" ) {
       
       leafletProxy(mapId = "mini_map", 
@@ -768,27 +783,27 @@ server <- function(input, output, session) {
                   opacity = 1)
     } else
       
-      #### vbp plot points. ----
-      if( input$plot_tabs == "Demand by Priority" ) {
-        
-        leafletProxy(mapId = "mini_map", 
-                     data = update_points) %>%
-          clearMarkers() %>%
-          clearControls() %>%
-          addCircleMarkers(radius = 4,
-                           fillOpacity = 0.9,
-                           stroke = FALSE,
-                           #  weight = 2,
-                           fillColor = ~map_priority_pal(priority), 
-                           label = lapply(mini_map_labs, HTML)
-          ) %>% 
-          addControl(html = "Legend not provided. Too many categories.",
-                     position = "topright")
-      }
+      ## vbp plot points. ----
+    if( input$plot_tabs == "Demand by Priority" ) {
+      
+      leafletProxy(mapId = "mini_map", 
+                   data = update_points) %>%
+        clearMarkers() %>%
+        clearControls() %>%
+        addCircleMarkers(radius = 4,
+                         fillOpacity = 0.9,
+                         stroke = FALSE,
+                         #  weight = 2,
+                         fillColor = ~map_priority_pal(priority), 
+                         label = lapply(mini_map_labs, HTML)
+        ) %>% 
+        addControl(html = "Legend not provided. Too many categories.",
+                   position = "topright")
+    }
     
   })
   
-  #### Tables. ----
+  ## Tables. ----
   
   ## Demand data table.
   output$demand_data_table <- renderDataTable({
@@ -804,7 +819,7 @@ server <- function(input, output, session) {
   
 } # End Server
 
-# APP -----------------------------------------------------------------------
+# APP --------------------------------------------------------------------------
 
 shinyApp(ui = ui,
          server = server)
