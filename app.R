@@ -64,9 +64,9 @@ if (Sys.info()["nodename"] == "Home-iMac.local") {
 load("./output/dwast-wrinfo.RData")
 
 # Demand data. Load smaller test set if on my local machine.
-ifelse(Sys.info()["nodename"] == "Home-iMac.local",
-       load("./explore/dwast-demands-test-set.RData"),
-       load("./output/dwast-demands.RData"))
+# ifelse(Sys.info()["nodename"] == "Home-iMac.local",
+#        load("./explore/dwast-demands-test-set.RData"),
+       (load("./output/dwast-demands.RData"))
 
 # Supply data.
 load("./output/dwast-supplies.RData")
