@@ -90,20 +90,50 @@ supply_hist_stats <- supply_hist_stats %>%
           s_scenario,
           plot_date)
 
-## Combine supply sources. Add historic years?
-supply <- bind_rows(supply_hist_stats)
+# Load and process B120 WSI supply data. ----
 
-## Save data files locally and to S3 bucket. ----
+# PLACEHOLDER
+# If it is a new month, download new WSI PDFs, scrape with PDFtables package,
+# then save munged data in TBD project folder. Currently using hand-built
+# source csv file while dashboard is in development.
+
+supply_forecast_wsi_raw <- read_csv("./supply-data/wsi/b120-wsi-20210201.csv")
+
+# Build plot_date.
+supply_forecast_wsi <- supply_forecast_wsi_raw %>% 
+  mutate(plot_date = as.Date(paste(plot_year, rept_month, 15, sep = "-"))) %>% 
+  select(-rept_month)
+
+# Convert af to af_daily and cfs.
+supply_forecast_wsi <- supply_forecast_wsi %>% 
+  mutate(af_daily = af_monthly / as.numeric(days_in_month(plot_date)),
+         cfs = af_daily * 0.504166667) %>% 
+  select(huc8_name,
+         s_scenario,
+         plot_date,
+         af_monthly,
+         af_daily,
+         cfs) %>% 
+  arrange(huc8_name,
+          s_scenario,
+          plot_date)
+
+
+## Combine supply sources. ----
+supply <- bind_rows(supply_hist_stats, supply_forecast_wsi)
+
+
+ # Save data files locally and to S3 bucket. ----
 
 # Save locally and to to S3 for dashboard to pick up.
 supply_create_date <- Sys.Date()
 save(supply,
      supply_create_date,
      file = "./output/dwast-supplies.RData")
-put_object(file = "./output/dwast-supplies.RData",
-           object = "dwast-supplies.RData",
-           bucket = "dwr-enf-shiny",
-           multipart = TRUE)
+# put_object(file = "./output/dwast-supplies.RData",
+#            object = "dwast-supplies.RData",
+#            bucket = "dwr-enf-shiny",
+#            multipart = TRUE)
 
 
 
