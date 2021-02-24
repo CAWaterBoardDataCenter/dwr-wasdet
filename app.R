@@ -34,6 +34,9 @@ if (!("package:dplyr" %in% search())) {
 if (!("package:spdplyr" %in% search())) {
   suppressMessages(library(spdplyr))
 }
+if (!("package:readr" %in% search())) {
+  suppressMessages(library(readr))
+}
 if (!("package:lubridate" %in% search())) {
   suppressMessages(library(lubridate))
 }
@@ -50,6 +53,7 @@ if (Sys.info()["nodename"] == "Home-iMac.local") {
   if (!("package:reactlog" %in% search())) {
     suppressMessages(library(reactlog))
   }
+  
   reactlog_enable()
 }
 
@@ -58,18 +62,21 @@ if (Sys.info()["nodename"] == "Home-iMac.local") {
 # Data source. Currently using data included in repository. In future, will
 # retrieve from AWS S3 bucket.
 
-# Load data files. ----
+# Load data. ----
 
 # Water Right Info.
 load("./output/dwast-wrinfo.RData")
 
 # Demand data. Load smaller test set if on my local machine.
-# ifelse(Sys.info()["nodename"] == "Home-iMac.local",
-#        load("./explore/dwast-demands-test-set.RData"),
-       (load("./output/dwast-demands.RData"))
+ifelse(Sys.info()["nodename"] == "Home-iMac.local",
+       load("./explore/dwast-demands-test-set.RData"),
+       load("./output/dwast-demands.RData"))
 
 # Supply data.
 load("./output/dwast-supplies.RData")
+
+# Load gage station location information.
+station_locs <- read_csv("./common/station-locations.csv")
 
 # Define color and shape aesthetics. ----
 
@@ -364,7 +371,7 @@ server <- function(input, output, session) {
     updateSelectInput(session,
                       inputId = "huc8_selected",
                       choices = choices,
-                      selected = "North Fork American")
+                      selected = "Upper Yuba")
   })
   
   ## Update demand scenario choices. ----
@@ -704,6 +711,11 @@ server <- function(input, output, session) {
                                               "Junior Post-14", "Post-14")))
   })
   
+  # Filter gage stations.
+  station_points <- reactive({
+    station_locs %>% filter(huc8_name %in% input$huc8_selected)
+  })
+  
   output$mini_map <- renderLeaflet({
     
     # Validate.
@@ -715,13 +727,14 @@ server <- function(input, output, session) {
     
     # Render.
     leaflet() %>%
+      
+      # Add base map.
       addProviderTiles(providers$CartoDB.Positron) %>%
       addPolygons(data = plot_poly(),
                   weight = 3,
                   col = "blue",
                   fill = TRUE,
-                  fillOpacity = 0
-      )
+                  fillOpacity = 0)
   })
   
   # Color POD points to match plot legend categories they fall under.
@@ -751,8 +764,12 @@ server <- function(input, output, session) {
                          stroke = FALSE,
                          weight = 2,
                          fillColor = ~map_demand_pal(vsd_fill_color), 
-                         label = lapply(mini_map_labs, HTML)
-        ) %>% 
+                         label = lapply(mini_map_labs, HTML)) %>% 
+                           
+                           addMarkers(data = station_points(),
+                                      lat = ~lat,
+                                      lng = ~lng) %>% 
+        
         addLegend(position = "topright",
                   colors = wa_demand_pal[1:3],
                   labels = c(paste(input$priority_selected, "& Junior Post-14 Demand"),
