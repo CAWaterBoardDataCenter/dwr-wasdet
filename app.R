@@ -767,7 +767,7 @@ server <- function(input, output, session) {
       leafletProxy(mapId = "mini_map") %>%
         clearGroup(group = "content") %>% 
         # clearMarkers() %>%
-        # clearControls() %>%
+        clearControls() %>%
         addCircleMarkers(group = "content",
                          data = update_points,
                          radius = 4,
@@ -793,7 +793,7 @@ server <- function(input, output, session) {
       leafletProxy(mapId = "mini_map") %>%
         clearGroup(group = "content") %>% 
         # clearMarkers() %>%
-        # clearControls() %>%
+        clearControls() %>%
         addCircleMarkers(group = "content",
                          data = update_points,
                          radius = 4,
@@ -816,7 +816,7 @@ server <- function(input, output, session) {
       leafletProxy(mapId = "mini_map") %>%
         clearGroup(group = "content") %>% 
         # clearMarkers() %>%
-        # clearControls() %>%
+        clearControls() %>%
         addCircleMarkers(group = "content",
                          data = update_points,
                          radius = 4,
