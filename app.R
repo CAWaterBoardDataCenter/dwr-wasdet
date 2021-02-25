@@ -110,6 +110,8 @@ map_priority_pal <- colorFactor(palette = priority_pal,
 wa_supply_pal <- colorRampPalette(wes_palette("Rushmore")[3:4])(3)
 wa_supply_shapes <- c(15, 16, 17)
 
+# Mini map icons.
+station_icon <- icons(iconUrl = "./www/x-diamond-fill.svg")
 
 # UI ---------------------------------------------------------------------------
 
@@ -371,7 +373,7 @@ server <- function(input, output, session) {
     updateSelectInput(session,
                       inputId = "huc8_selected",
                       choices = choices,
-                      selected = "Upper Yuba")
+                      selected = "North Fork American")
   })
   
   ## Update demand scenario choices. ----
@@ -711,9 +713,10 @@ server <- function(input, output, session) {
                                               "Junior Post-14", "Post-14")))
   })
   
-  # Filter gage stations.
+  # Filter gauge stations.
   station_points <- reactive({
-    station_locs %>% filter(huc8_name %in% input$huc8_selected)
+    station_locs %>% 
+      filter(huc8_name %in% input$huc8_selected)
   })
   
   output$mini_map <- renderLeaflet({
@@ -730,15 +733,21 @@ server <- function(input, output, session) {
       
       # Add base map.
       addProviderTiles(providers$CartoDB.Positron) %>%
-      addPolygons(data = plot_poly(),
+      addPolygons(group = "base",
+                  data = plot_poly(),
                   weight = 3,
                   col = "blue",
                   fill = TRUE,
-                  fillOpacity = 0)
+                  fillOpacity = 0) %>% 
+      addMarkers(group = "base",
+                 data = station_points(),
+                 lat = ~lat,
+                 lng = ~lng,
+                 icon = station_icon,
+                 popup = ~htmlEscape(station_id))
   })
   
-  # Color POD points to match plot legend categories they fall under.
-  
+  ### Update POD points and legends. ----
   observe({
     
     update_points <- pod_points()
@@ -752,23 +761,22 @@ server <- function(input, output, session) {
       )
     })
     
-    ### vsd plot points. ----
+    #### vsd plot points. ----
     if( input$plot_tabs == "Supply-Demand Scenarios" ) {
       
-      leafletProxy(mapId = "mini_map", 
-                   data = update_points) %>%
-        clearMarkers() %>%
-        clearControls() %>%
-        addCircleMarkers(radius = 4,
+      leafletProxy(mapId = "mini_map") %>%
+        clearGroup(group = "content") %>% 
+        # clearMarkers() %>%
+        # clearControls() %>%
+        addCircleMarkers(group = "content",
+                         data = update_points,
+                         radius = 4,
                          fillOpacity = 0.8,
                          stroke = FALSE,
                          weight = 2,
-                         fillColor = ~map_demand_pal(vsd_fill_color), 
-                         label = lapply(mini_map_labs, HTML)) %>% 
-                           
-                           addMarkers(data = station_points(),
-                                      lat = ~lat,
-                                      lng = ~lng) %>% 
+                         fillColor = ~map_demand_pal(vsd_fill_color),
+                         label = lapply(mini_map_labs, HTML)
+                         ) %>%
         
         addLegend(position = "topright",
                   colors = wa_demand_pal[1:3],
@@ -779,14 +787,16 @@ server <- function(input, output, session) {
                   opacity = 1)
     } else
       
-      ## dbwrt plot points. ----
+      ### dbwrt plot points. ----
     if( input$plot_tabs == "Demand by Water Right Type" ) {
       
-      leafletProxy(mapId = "mini_map", 
-                   data = update_points) %>%
-        clearMarkers() %>% 
-        clearControls() %>% 
-        addCircleMarkers(radius = 4,
+      leafletProxy(mapId = "mini_map") %>%
+        clearGroup(group = "content") %>% 
+        # clearMarkers() %>%
+        # clearControls() %>%
+        addCircleMarkers(group = "content",
+                         data = update_points,
+                         radius = 4,
                          fillOpacity = 0.8,
                          stroke = FALSE,
                          weight = 2,
@@ -800,14 +810,16 @@ server <- function(input, output, session) {
                   opacity = 1)
     } else
       
-      ## vbp plot points. ----
+      ### vbp plot points. ----
     if( input$plot_tabs == "Demand by Priority" ) {
       
-      leafletProxy(mapId = "mini_map", 
-                   data = update_points) %>%
-        clearMarkers() %>%
-        clearControls() %>%
-        addCircleMarkers(radius = 4,
+      leafletProxy(mapId = "mini_map") %>%
+        clearGroup(group = "content") %>% 
+        # clearMarkers() %>%
+        # clearControls() %>%
+        addCircleMarkers(group = "content",
+                         data = update_points,
+                         radius = 4,
                          fillOpacity = 0.9,
                          stroke = FALSE,
                          #  weight = 2,
@@ -819,6 +831,23 @@ server <- function(input, output, session) {
     }
     
   })
+  
+  ### Update gauge station markers. ----
+  # observe({
+  #   
+  #   update_stations <- station_points()
+  #   
+  #   if( input$plot_tabs == "Supply-Demand Scenarios" ) {
+  #     
+  #     leafletProxy(mapId = "mini_map") %>%
+  #       addMarkers(data = station_points(),
+  #                  lat = ~lat,
+  #                  lng = ~lng,
+  #                  label = ~htmlEscape(station_id))
+  #   }
+  #       
+  #   
+  # })
   
   ## Tables. ----
   
