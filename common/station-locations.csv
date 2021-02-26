@@ -1,24 +1,24 @@
-huc8_name,station_id,station_name,lat,lng
-Upper San Joaquin,SJF,San Joaquin River below Friant,36.98439,-119.72431
-Upper Merced,MRC,Merced River near Merced Falls,37.522,-120.331
-Upper Tuolumne,TLG,Tuolumne River at La Grange Dam,37.666,-120.441
-Upper Stanislaus,GDW,Goodwin Dam,37.8628,-120.6297
-Upper Yuba,YRS,Yuba River near Smartville,39.23517,-121.27412
-McCloud,MSSC1,McCloud River - Above Shasta Lake,40.95833,-122.21833
-Sacramento Headwaters,SHDC1,Sacramento River - Shasta Lake,40.71417,-122.41611
-Upper Stony,EPRC1,Little Stony Creek - East Park Reservoir,39.35917,-122.51778
-Middle Fork Feather,MRMC1,Middle Fork Feather River - Merrimac,39.70833,-121.26944
-North Fork American,AMA,North Fork American near Auburn,38.872000,-121.055000
-North Fork American,NFDC1,North Fork American River - North Fork Dam,38.93611,-121.02278
-North Fork American,MFAC1,Middle Fork American River - Foresthill,39.00611,-120.75972
-Cow Creek,CWCC1,Cow Creek - Millville,40.50528,-122.23222
-Cottonwood Creek,CWAC1,Cottonwood Creek - Cottonwood,40.385,-122.23889
-Battle Creek,COTC1,Battle Creek - Cottonwood,40.39833,-122.14528
-Butte Creek,BKCC1,Butte Creek - Chico,39.72611,-121.70778
-Upper Putah,LBEC1,Putah Creek - Lake Berryessa,38.513,-122.104
-Fresno River,HIDC1,Fresno River - Hensley Lake,37.10167,-119.88
-Upper Calaveras California,NHGC1,Calaveras River - New Hogan Lake,38.155,-120.81389
-Upper Mokelumne,CMPC1,Mokelumne River - Pardee Reservoir,38.25694,-120.84972
-Upper Cosumnes,MHBC1,Cosumnes River - Michigan Bar,38.50028,-121.04417
-Upper Bear,UF10,Bear River near Wheatland,38.99993,-121.40731
-Upper Cache,INVC1,North Fork Cache Creek - Indian Valley Reservoir,39.08,-122.53361
+huc8_name,station_id,station_name,data_provider,link,lat,lng
+Upper San Joaquin,SJF,San Joaquin River below Friant,CDEC,"<a href=""https://cdec.water.ca.gov/dynamicapp/staMeta?station_id=SJF"">Link to Data Source</a>",36.98439,-119.72431
+Upper Merced,MRC,Merced River near Merced Falls,CDEC,"<a href=""https://cdec.water.ca.gov/dynamicapp/staMeta?station_id=MRC"">Link to Data Source</a>",37.522,-120.331
+Upper Tuolumne,TLG,Tuolumne River at La Grange Dam,CDEC,"<a href=""https://cdec.water.ca.gov/dynamicapp/staMeta?station_id=TLG"">Link to Data Source</a>",37.666,-120.441
+Upper Stanislaus,GDW,Goodwin Dam,CDEC,"<a href=""https://cdec.water.ca.gov/dynamicapp/staMeta?station_id=GDW"">Link to Data Source</a>",37.8628,-120.6297
+Upper Yuba,YRS,Yuba River near Smartville,CDEC,"<a href=""https://cdec.water.ca.gov/dynamicapp/staMeta?station_id=YRS"">Link to Data Source</a>",39.23517,-121.27412
+McCloud,MSSC1,McCloud River - Above Shasta Lake,CNRFC,"<a href=""https://www.cnrfc.noaa.gov/ensembleProductTabular.php?id=MSSC1&prodID=7"">Link to Data Source</a>",40.95833,-122.21833
+Sacramento Headwaters,SHDC1,Sacramento River - Shasta Lake,CNRFC,"<a href=""https://www.cnrfc.noaa.gov/ensembleProductTabular.php?id=DLTC1&prodID=9"">Link to Data Source</a>",40.71417,-122.41611
+Upper Stony,EPRC1,Little Stony Creek - East Park Reservoir,CNRFC,"<a href=""https://www.cnrfc.noaa.gov/ensembleProductTabular.php?id=EPRC1&prodID=9"">Link to Data Source</a>",39.35917,-122.51778
+Middle Fork Feather,MRMC1,Middle Fork Feather River - Merrimac,CNRFC,"<a href=""https://www.cnrfc.noaa.gov/ensembleProductTabular.php?id=DVSC1&prodID=9"">Link to Data Source</a>",39.70833,-121.26944
+North Fork American,AMA,North Fork American near Auburn,CNRFC,"<a href=""https://www.cnrfc.noaa.gov/ensembleProductTabular.php?id=FMDC1&prodID=9"">Link to Data Source</a>",38.872,-121.055
+North Fork American,NFDC1,North Fork American River - North Fork Dam,CNRFC,"<a href=""https://www.cnrfc.noaa.gov/ensembleProductTabular.php?id=FMDC1&prodID=9"">Link to Data Source</a>",38.93611,-121.02278
+North Fork American,MFAC1,Middle Fork American River - Foresthill,CNRFC,"<a href=""https://www.cnrfc.noaa.gov/ensembleProductTabular.php?id=FMDC1&prodID=9"">Link to Data Source</a>",39.00611,-120.75972
+Cow Creek,CWCC1,Cow Creek - Millville,CNRFC,"<a href=""https://www.cnrfc.noaa.gov/ensembleProductTabular.php?id=CWCC1&prodID=9"">Link to Data Source</a>",40.50528,-122.23222
+Cottonwood Creek,CWAC1,Cottonwood Creek - Cottonwood,CNRFC,"<a href=""https://www.cnrfc.noaa.gov/ensembleProductTabular.php?id=CWAC1&prodID=9"">Link to Data Source</a>",40.385,-122.23889
+Battle Creek,COTC1,Battle Creek - Cottonwood,CNRFC,"<a href=""https://www.cnrfc.noaa.gov/ensembleProductTabular.php?id=COTC1&prodID=9"">Link to Data Source</a>",40.39833,-122.14528
+Butte Creek,BKCC1,Butte Creek - Chico,CNRFC,"<a href=""https://www.cnrfc.noaa.gov/ensembleProductTabular.php?id=BKCC1&prodID=9"">Link to Data Source</a>",39.72611,-121.70778
+Upper Putah,LBEC1,Putah Creek - Lake Berryessa,CNRFC,"<a href=""https://www.cnrfc.noaa.gov/ensembleProductTabular.php?id=LBEC1&prodID=9"">Link to Data Source</a>",38.513,-122.104
+Fresno River,HIDC1,Fresno River - Hensley Lake,CNRFC,"<a href=""https://www.cnrfc.noaa.gov/ensembleProductTabular.php?id=HIDC1&prodID=9"">Link to Data Source</a>",37.10167,-119.88
+Upper Calaveras California,NHGC1,Calaveras River - New Hogan Lake,CNRFC,"<a href=""https://www.cnrfc.noaa.gov/ensembleProductTabular.php?id=NHGC1&prodID=9"">Link to Data Source</a>",38.155,-120.81389
+Upper Mokelumne,CMPC1,Mokelumne River - Pardee Reservoir,CNRFC,"<a href=""https://www.cnrfc.noaa.gov/ensembleProductTabular.php?id=CMPC1&prodID=9"">Link to Data Source</a>",38.25694,-120.84972
+Upper Cosumnes,MHBC1,Cosumnes River - Michigan Bar,CNRFC,"<a href=""https://www.cnrfc.noaa.gov/ensembleProductTabular.php?id=EDOC1&prodID=9"">Link to Data Source</a>",38.50028,-121.04417
+Upper Bear,UF10,Bear River near Wheatland,DWR,"<a href=""https://cawaterlibrary.net/wp-content/uploads/2018/03/Estimates-of-Natural-and-Unimpaired-Flows-for-the-Central-Valley-of-California-1922-2014.pdf"">Link to Data Source</a>",38.99993,-121.40731
+Upper Cache,INVC1,North Fork Cache Creek - Indian Valley Reservoir,CNRFC,"<a href=""https://www.cnrfc.noaa.gov/ensembleProductTabular.php?id=INVC1&prodID=9"">Link to Data Source</a>",39.08,-122.53361
