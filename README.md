@@ -1,4 +1,4 @@
-# DWR-DET: Division of Water Rights Demand Exploration Tool
+# DWR-WaSDET: Division of Water Rights-Water Supply/Demand Exploration Tool
 
 > Explore California's Surface Water Demands
 
