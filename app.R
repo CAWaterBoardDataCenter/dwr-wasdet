@@ -278,9 +278,9 @@ ui <- navbarPage(
                                                          br(),br(),
                                                          
                                                          ### Debug notes. ----
-                                                         h3("Debug"),
+                                                      #   h3("Debug"),
                                                          
-                                                         textOutput("debug_text")
+                                                      #   textOutput("debug_text")
                                                        )
                                                 )
                                               )
@@ -522,7 +522,7 @@ server <- function(input, output, session) {
       scale_y_continuous(labels = comma) +
       
       # Demand legend.
-      scale_fill_manual(name = "Demand Type:",
+      scale_fill_manual(name = "Demand Priority:",
                         values = wa_demand_pal,
                         labels = c(paste(input$priority_selected, 
                                          "& Junior Post-14 Demand"),
@@ -738,27 +738,30 @@ server <- function(input, output, session) {
                   weight = 3,
                   col = "blue",
                   fill = TRUE,
-                  fillOpacity = 0) %>% 
-      addMarkers(group = "base",
-                 data = station_points(),
-                 lat = ~lat,
-                 lng = ~lng,
-                 icon = station_icon,
-                 popup = ~htmlEscape(station_id))
+                  fillOpacity = 0)
   })
   
   ### Update POD points and legends. ----
   observe({
     
-    update_points <- pod_points()
+    pod_points <- pod_points()
+    station_points <- station_points()
     
-    mini_map_labs <- lapply(seq(nrow(update_points)), function(i) {
-      paste0('Water Right ID: ', st_drop_geometry(update_points[i, "wr_id"]), '<br>',
-             'Owner: ', st_drop_geometry(update_points[i, "owner"]), '<br>',
-             'Water Right Type: ', st_drop_geometry(update_points[i, "wr_type"]), '<br>',
-             'Priority: ' , st_drop_geometry(update_points[i, "priority"]), '<br>',
-             'Status: ', st_drop_geometry(update_points[i, "wr_status"])
+    # Create POD label look-up.
+    pod_labs <- lapply(seq(nrow(pod_points)), function(i) {
+      paste0('Water Right ID: ', st_drop_geometry(pod_points[i, "wr_id"]), '<br>',
+             'Owner: ', st_drop_geometry(pod_points[i, "owner"]), '<br>',
+             'Water Right Type: ', st_drop_geometry(pod_points[i, "wr_type"]), '<br>',
+             'Priority: ' , st_drop_geometry(pod_points[i, "priority"]), '<br>',
+             'Status: ', st_drop_geometry(pod_points[i, "wr_status"])
       )
+    })
+    
+    station_labs <- lapply(seq(nrow(station_points)), function(i) {
+      paste0('<b>Station: </b>', station_points[i, "station_id"], '<br>',
+             '<b>Name: </b>', station_points[i, "station_name"], '<br>',
+             '<b>Data Provider: </b>', station_points[i, "data_provider"], '<br>',
+             '<b>', station_points[i, "link"], '</b>')
     })
     
     #### vsd plot points. ----
@@ -769,21 +772,27 @@ server <- function(input, output, session) {
         # clearMarkers() %>%
         clearControls() %>%
         addCircleMarkers(group = "content",
-                         data = update_points,
+                         data = pod_points,
                          radius = 4,
                          fillOpacity = 0.8,
                          stroke = FALSE,
                          weight = 2,
                          fillColor = ~map_demand_pal(vsd_fill_color),
-                         label = lapply(mini_map_labs, HTML)
-                         ) %>%
+                         label = lapply(pod_labs, HTML)) %>%
+        
+        addMarkers(group = "content",
+                   data = station_points(),
+                   lat = ~lat,
+                   lng = ~lng,
+                   icon = station_icon,
+                   popup = lapply(station_labs, HTML)) %>% 
         
         addLegend(position = "topright",
                   colors = wa_demand_pal[1:3],
                   labels = c(paste(input$priority_selected, "& Junior Post-14 Demand"),
                              paste(as.numeric(input$priority_selected) -1, "& Senior Post-14 Demand"),
                              "Statement Demand"),
-                  title = "Demand Type",
+                  title = "Demand Priority",
                   opacity = 1)
     } else
       
@@ -795,17 +804,17 @@ server <- function(input, output, session) {
         # clearMarkers() %>%
         clearControls() %>%
         addCircleMarkers(group = "content",
-                         data = update_points,
+                         data = pod_points,
                          radius = 4,
                          fillOpacity = 0.8,
                          stroke = FALSE,
                          weight = 2,
                          fillColor = ~map_wrt_pal(wr_type), 
-                         label = lapply(mini_map_labs, HTML)
+                         label = lapply(pod_labs, HTML)
         ) %>% 
         addLegend(position = "topright",
                   pal = map_wrt_pal,
-                  values = update_points$wr_type,
+                  values = pod_points$wr_type,
                   title = "Water Right Type",
                   opacity = 1)
     } else
@@ -818,13 +827,13 @@ server <- function(input, output, session) {
         # clearMarkers() %>%
         clearControls() %>%
         addCircleMarkers(group = "content",
-                         data = update_points,
+                         data = pod_points,
                          radius = 4,
                          fillOpacity = 0.9,
                          stroke = FALSE,
                          #  weight = 2,
                          fillColor = ~map_priority_pal(priority), 
-                         label = lapply(mini_map_labs, HTML)
+                         label = lapply(pod_labs, HTML)
         ) %>% 
         addControl(html = "Legend not provided. Too many categories.",
                    position = "topright")
