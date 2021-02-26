@@ -113,6 +113,11 @@ wa_supply_shapes <- c(15, 16, 17)
 # Mini map icons.
 station_icon <- icons(iconUrl = "./www/x-diamond-fill.svg")
 
+# Icon legend for vsd plot.
+html_legend <-
+  "<img src='circle-fill.svg' style='width:8px;height:8px;'> Point of Diversion<br/>
+<img src='x-diamond-fill.svg'> Gage Station"
+
 # UI ---------------------------------------------------------------------------
 
 ui <- navbarPage(
@@ -416,8 +421,7 @@ server <- function(input, output, session) {
                              choices = choices,
                              selected = choices)
   })
-  
-  
+ 
   # Outputs. ----
   
   ## Supply-Demand Scenario plot (vsd). ----
@@ -713,7 +717,7 @@ server <- function(input, output, session) {
                                               "Junior Post-14", "Post-14")))
   })
   
-  # Filter gauge stations.
+  # Filter gage stations.
   station_points <- reactive({
     station_locs %>% 
       filter(huc8_name %in% input$huc8_selected)
@@ -769,8 +773,9 @@ server <- function(input, output, session) {
       
       leafletProxy(mapId = "mini_map") %>%
         clearGroup(group = "content") %>% 
-        # clearMarkers() %>%
         clearControls() %>%
+        
+        # POD points.
         addCircleMarkers(group = "content",
                          data = pod_points,
                          radius = 4,
@@ -780,6 +785,7 @@ server <- function(input, output, session) {
                          fillColor = ~map_demand_pal(vsd_fill_color),
                          label = lapply(pod_labs, HTML)) %>%
         
+        # Gage station markers.
         addMarkers(group = "content",
                    data = station_points(),
                    lat = ~lat,
@@ -787,13 +793,19 @@ server <- function(input, output, session) {
                    icon = station_icon,
                    popup = lapply(station_labs, HTML)) %>% 
         
+        # Color legend.
         addLegend(position = "topright",
                   colors = wa_demand_pal[1:3],
                   labels = c(paste(input$priority_selected, "& Junior Post-14 Demand"),
                              paste(as.numeric(input$priority_selected) -1, "& Senior Post-14 Demand"),
                              "Statement Demand"),
                   title = "Demand Priority",
-                  opacity = 1)
+                  opacity = 1) %>% 
+        
+        # Shape legend.
+        addControl(html = html_legend,
+                   position = "bottomleft")
+      
     } else
       
       ### dbwrt plot points. ----
@@ -801,7 +813,6 @@ server <- function(input, output, session) {
       
       leafletProxy(mapId = "mini_map") %>%
         clearGroup(group = "content") %>% 
-        # clearMarkers() %>%
         clearControls() %>%
         addCircleMarkers(group = "content",
                          data = pod_points,
@@ -824,7 +835,6 @@ server <- function(input, output, session) {
       
       leafletProxy(mapId = "mini_map") %>%
         clearGroup(group = "content") %>% 
-        # clearMarkers() %>%
         clearControls() %>%
         addCircleMarkers(group = "content",
                          data = pod_points,
@@ -840,23 +850,6 @@ server <- function(input, output, session) {
     }
     
   })
-  
-  ### Update gauge station markers. ----
-  # observe({
-  #   
-  #   update_stations <- station_points()
-  #   
-  #   if( input$plot_tabs == "Supply-Demand Scenarios" ) {
-  #     
-  #     leafletProxy(mapId = "mini_map") %>%
-  #       addMarkers(data = station_points(),
-  #                  lat = ~lat,
-  #                  lng = ~lng,
-  #                  label = ~htmlEscape(station_id))
-  #   }
-  #       
-  #   
-  # })
   
   ## Tables. ----
   
