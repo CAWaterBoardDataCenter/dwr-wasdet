@@ -32,10 +32,10 @@ if(!("package:aws.s3" %in% search())) {
 ### Initialization. ----
 
 ## Switches.
-download_new_wrinfo <- FALSE
-download_new_pods <- FALSE
-save_data_gaps <- FALSE
-report_multi_hucs <- FALSE
+download_new_wrinfo <- TRUE
+download_new_pods <- TRUE
+save_data_gaps <- TRUE
+report_multi_hucs <- TRUE
 
 ## Create project folders if they don't exist.  <-- purrr this!
 
@@ -250,11 +250,7 @@ pods <- pods %>%
 no_huc8s_ <- pods %>%
   filter(is.na(huc8_name))
 pods <- pods %>% 
-  filter(!wr_id %in% no_huc8s_$wr_id)
-
-# Remove missing HUC-8 rights from wr-info, since they would have no HUC8.
-wr_info <- wr_info %>% 
-  filter(!wr_id %in% no_huc8s_$wr_id)
+  filter(!is.na(huc8_name))
 
 # Save list of records with the missing data to the data-gaps folder.
 if(save_data_gaps) {
@@ -266,8 +262,6 @@ if(save_data_gaps) {
 # ID water rights that have no info in pods.
 missing_pod_info_ <- wr_info %>%
   filter(!wr_id %in% pods$wr_id)
-wr_info <- wr_info %>% 
-  filter(!wr_id %in% missing_pod_info_$wr_id)
 
 # Save list of records with the missing POD data to the data-gaps folder.
 if(save_data_gaps) {
@@ -282,6 +276,7 @@ huc8_list <- pods %>%
   st_drop_geometry() %>% 
   select(wr_id,
          huc8_name) %>% 
+  filter(!is.na(huc8_name)) %>% 
   distinct() %>% 
   group_by(wr_id) %>% 
   mutate(demand_wt = 1 / n())
@@ -318,8 +313,7 @@ pods<- pods %>%
                          suppressWarnings(as.numeric(priority)),
                          NA)) %>% 
   relocate(p_year, .after = priority)
-  
-
+ 
 # Reproject points to st_crs("+proj=longlat +datum=WGS84 +no_defs") (4326).
 # This is the projection leaflet likes.
 pods <- st_transform(pods, 4326)
@@ -334,8 +328,6 @@ huc8_layer <- st_transform(huc8_layer,
 
 huc8_layer <- huc8_layer %>% 
   select(huc8_name = name,
-#         shape_Leng,
-#         shape_Area,
          geometry)
 
 ## Save data files locally and to S3 bucket. ----
@@ -347,8 +339,8 @@ save(wr_info,
      huc8_layer,
      wr_type_list,
      create_date,
-     file = "./output/dwast-wrinfo.RData")
-put_object(file = "./output/dwast-wrinfo.RData", 
-           object = "dwast-wrinfo.RData", 
+     file = "./output/wasdet-wrinfo.RData")
+put_object(file = "./output/wasdet-wrinfo.RData", 
+           object = "wasdet-wrinfo.RData", 
            bucket = "dwr-enf-shiny",
            multipart = TRUE)

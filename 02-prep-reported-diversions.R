@@ -10,11 +10,10 @@ library(aws.s3)
 
 ## Initialization. ----
 
-download_divs <- FALSE
+download_divs <- TRUE
 
 # Load functions.
-if(download_divs) source("f_getReportedDivs.R")
-
+if(download_divs) source("f_getReportedDivs_FF.R")
 
 # set up parallel R sessions.
 plan(multisession)
@@ -28,12 +27,8 @@ priority_order <- c(c(project_year:1914),
                     "Statement Demand", 
                     "Environmental Demand")
 
-# Load last created wr_info data.
-wr_info_files <- file.info(list.files(path = "./output/", 
-                                      full.names = TRUE,
-                                      pattern = "dwast-wrinfo"))
-f_name <- rownames(wr_info_files)[which.max(wr_info_files$mtime)]
-load(file = f_name)
+# Load wr_info data.
+load("./output/wasdet-wrinfo.RData")
 
 # Download diversion data from WRUDS link.
 if(download_divs) {
@@ -54,7 +49,7 @@ diversions <- diversions_raw %>% clean_names() %>%
          af_monthly = amount,
          everything(),
          -water_right_id) %>% 
-  filter(d_scenario >= 2011 & d_scenario < (project_year - 1))
+  filter(d_scenario >= 2011 & d_scenario < (project_year))
 
 # Recode scenario name to be more descriptive.
 diversions <- diversions %>% 
@@ -94,7 +89,8 @@ agg_dem_wrid <- function(x) {
     ungroup()
 }
 demand <- future_map(.x = demand,
-                     .f = agg_dem_wrid)
+                     .f = agg_dem_wrid,
+                     .progress = TRUE)
 
 ## Demands are AF/month. Plots will be on a daily time step. Calculate 
 ## month-averaged daily AF and cfs. Map to date time series with project_year.
@@ -150,72 +146,22 @@ plan(sequential)
 
 # Save to S3 for Shiny app to pick up.
 demand_create_date <- Sys.Date()
+outfile_loc <- "./output/wasdet-demands.RData"
 save(demand,
      demand_create_date,
-     file = "./output/dwast-demands.RData")
-# put_object(file = "./output/dwast-demands.RData",
-#           object = "dwast-demands.RData",
-#           bucket = "dwr-enf-shiny",
-#           multipart = TRUE)
+     file = outfile_loc)
+put_object(file = outfile_loc,
+          object = "wasdet-demands.RData",
+          bucket = "dwr-enf-shiny",
+          multipart = TRUE)
 
-
-# save demand test set for shorter load times.
+# Save demand test set for shorter load times.
 demand <- demand[grepl("N", names(demand))]
+test_data_loc <- "./output/wasdet-demands.RData"
 save(demand,
      demand_create_date,
-     file = "./explore/dwast-demands-test-set.RData")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+     file = test_data_loc)
+put_object(file = test_data_loc,
+           object = "wasdet-demands-test-set.RData",
+           bucket = "dwr-enf-shiny",
+           multipart = TRUE)

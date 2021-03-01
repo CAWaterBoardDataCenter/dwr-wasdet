@@ -1,6 +1,9 @@
 # Initialization -------------------------------------------------------------
 
 # Load libraries. ----
+if (!("package:aws.s3" %in% search())) {
+  suppressMessages(library(aws.s3))
+}
 if (!("package:shiny" %in% search())) {
   suppressMessages(library(shiny))
 }
@@ -57,25 +60,24 @@ if (Sys.info()["nodename"] == "Home-iMac.local") {
   reactlog_enable()
 }
 
-# Initialize values. ----
-
-# Data source. Currently using data included in repository. In future, will
-# retrieve from AWS S3 bucket.
-
-# Load data. ----
+# Load data from AWS S3 bucket. ----
 
 # Water Right Info.
-load("./output/dwast-wrinfo.RData")
+s3load(object = "wasdet-wrinfo.RData",
+       bucket = "dwr-enf-shiny")
 
-# Demand data. Load smaller test set if on my local machine.
-ifelse(Sys.info()["nodename"] == "Home-iMac.local",
-       load("./explore/dwast-demands-test-set.RData"),
-       load("./output/dwast-demands.RData"))
+# Demand data. Load smaller test set if on local machine for testing.
+if (Sys.info()["nodename"] == "Home-iMac.local") {
+       s3load(object = "wasdet-demands-test-set.RData", bucket = "dwr-enf-shiny")
+} else {
+       s3load(object = "wasdet-demands.RData", bucket = "dwr-enf-shiny")
+}
 
 # Supply data.
-load("./output/dwast-supplies.RData")
+s3load(object = "wasdet-supplies.RData",
+       bucket = "dwr-enf-shiny")
 
-# Load gage station location information.
+# Gage station location information.
 station_locs <- read_csv("./common/station-locations.csv")
 
 # Define color and shape aesthetics. ----
@@ -283,9 +285,9 @@ ui <- navbarPage(
                                                          br(),br(),
                                                          
                                                          ### Debug notes. ----
-                                                      #   h3("Debug"),
+                                                         #   h3("Debug"),
                                                          
-                                                      #   textOutput("debug_text")
+                                                         #   textOutput("debug_text")
                                                        )
                                                 )
                                               )
@@ -421,7 +423,7 @@ server <- function(input, output, session) {
                              choices = choices,
                              selected = choices)
   })
- 
+  
   # Outputs. ----
   
   ## Supply-Demand Scenario plot (vsd). ----
