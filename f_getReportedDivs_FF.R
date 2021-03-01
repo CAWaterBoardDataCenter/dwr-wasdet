@@ -39,7 +39,8 @@ getReporteDivsCSV <- function(cred_file = "credentials.csv",
         browser.download.dir = normalizePath(getwd()),  
         browser.download.folderList = 2L, 
         browser.download.manager.showWhenStarting = FALSE,
-        browser.helperApps.neverAsk.saveToDisk = "text/xml",
+        browser.helperApps.neverAsk.saveToDisk = "text/csv",
+        # browser.helperApps.alwaysAsk.force = FALSE,
         browser.tabs.remote.autostart = FALSE,
         browser.tabs.remote.autostart.2 = FALSE,
         browser.tabs.remote.desktopbehavior = FALSE))
@@ -56,7 +57,7 @@ getReporteDivsCSV <- function(cred_file = "credentials.csv",
     
     remDr <- driver[["client"]]
     
-    # Navigate to CIWQS Login page.
+    # Navigate to CIWQS Log in page.
     remDr$navigate("https://ciwqs.waterboards.ca.gov/ciwqs/index.jsp")
     
     # Enter login credentials.
@@ -64,6 +65,7 @@ getReporteDivsCSV <- function(cred_file = "credentials.csv",
     username$sendKeysToElement(list(creds$u_name))
     passwd <- remDr$findElement(using = "name", value = "password")
     passwd$sendKeysToElement(list(creds$p_word, "\uE007"))
+    Sys.sleep(2)
     
     # Navigate to WRUDS Data Download page.
     remDr$navigate("https://ciwqs.waterboards.ca.gov/ciwqs/ewrims/wruds_data_download.jsp")
@@ -103,6 +105,4 @@ getReporteDivsCSV <- function(cred_file = "credentials.csv",
         # Return path to saved file.
         return(new_file_path)
     }
-    
-    
 }
