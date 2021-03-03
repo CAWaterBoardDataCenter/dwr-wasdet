@@ -49,6 +49,7 @@ dwr-files
 data-gaps
 gis
 demands
+output
 scratch.R
 credentials.csv
 wruds_downloads

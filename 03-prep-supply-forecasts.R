@@ -119,17 +119,17 @@ supply_forecast_wsi <- supply_forecast_wsi %>%
           plot_date)
 
 ## Combine supply sources. ----
-supply <- bind_rows(supply_hist_stats, supply_forecast_wsi)
+supply_fc <- bind_rows(supply_hist_stats, supply_forecast_wsi)
 
  # Save data files locally and to S3 bucket. ----
 
 # Save locally and to to S3 for dashboard to pick up.
-supply_create_date <- Sys.Date()
-outfile_loc <- "./output/wasdet-supplies.RData"
-save(supply,
-     supply_create_date,
+supply_fc_create_date <- Sys.Date()
+outfile_loc <- "./output/wasdet-supplies-forecast.RData"
+save(supply_fc,
+     supply_fc_create_date,
      file = outfile_loc)
 put_object(file = outfile_loc,
-           object = "wasdet-supplies.RData",
+           object = "wasdet-supplies-forecast.RData",
            bucket = "dwr-enf-shiny",
            multipart = TRUE)
