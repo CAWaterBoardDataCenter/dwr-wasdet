@@ -74,7 +74,7 @@ if (Sys.info()["nodename"] == "Home-iMac.local") {
 }
 
 # Supply data.
-s3load(object = "wasdet-supplies.RData",
+s3load(object = "wasdet-supplies-forecast.RData",
        bucket = "dwr-enf-shiny")
 
 # Gage station location information.
@@ -373,7 +373,7 @@ server <- function(input, output, session) {
   ## Filter for watersheds that have supply data. ----
   observeEvent(input$supply_filter, {
     if (input$supply_filter) { 
-      choices <- sort(names(demand)[names(demand) %in% supply$huc8_name]) 
+      choices <- sort(names(demand)[names(demand) %in% supply_fc$huc8_name]) 
     } else { 
       choices <- sort(names(demand))
     }
@@ -394,7 +394,7 @@ server <- function(input, output, session) {
   
   ## Update supply scenario choices. ----
   observeEvent(input$huc8_selected, {
-    choices <- sort(unique(filter(supply, 
+    choices <- sort(unique(filter(supply_fc, 
                                   huc8_name %in% input$huc8_selected)$s_scenario))
     updateSelectizeInput(session, 
                          inputId = "s_scene_selected",
@@ -471,7 +471,7 @@ server <- function(input, output, session) {
       {
         
         # Supply.
-        filter(supply, huc8_name %in% input$huc8_selected,
+        filter(supply_fc, huc8_name %in% input$huc8_selected,
                s_scenario %in% input$s_scene_selected) %>%
           mutate(source = "old",
                  fill_color = NA,

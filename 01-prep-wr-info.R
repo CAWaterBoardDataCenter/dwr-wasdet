@@ -32,10 +32,10 @@ if(!("package:aws.s3" %in% search())) {
 ### Initialization. ----
 
 ## Switches.
-download_new_wrinfo <- TRUE
-download_new_pods <- TRUE
-save_data_gaps <- TRUE
-report_multi_hucs <- TRUE
+download_new_wrinfo <- FALSE
+download_new_pods <- FALSE
+save_data_gaps <- FALSE
+report_multi_hucs <- FALSE
 
 ## Create project folders if they don't exist.  <-- purrr this!
 
@@ -305,6 +305,7 @@ if(report_multi_hucs) {
 # Add additional information to layer for more informative popups.
 pods <- pods %>% 
   left_join(., wr_info, by = c("wr_id", "huc8_name")) %>% 
+  select(-wr_class, -demand_wt) %>% 
   relocate(SHAPE, .after = last_col())
 
 # Make numerical p_year column. Introduces NAs by coercion, but that's ok.
