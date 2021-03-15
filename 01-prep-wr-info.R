@@ -29,15 +29,26 @@ if(!("package:aws.s3" %in% search())) {
   suppressMessages(library(aws.s3))
 }
 
-### Initialization. ----
+# Initialization. ----
 
-## Switches.
-download_new_wrinfo <- FALSE
-download_new_pods <- FALSE
-save_data_gaps <- FALSE
-report_multi_hucs <- FALSE
+## Switches. ----
+download_new_wrinfo <- TRUE
+download_new_pods <- TRUE
+save_data_gaps <- TRUE
+report_multi_hucs <- TRUE
 
-## Create project folders if they don't exist.  <-- purrr this!
+## Load S3 keys. ----
+Sys.setenv("AWS_ACCESS_KEY_ID" = scan("s3-keys.txt",
+                                      what = "character",
+                                      quiet = TRUE)[1],
+           "AWS_SECRET_ACCESS_KEY" = scan("s3-keys.txt",
+                                          what = "character",
+                                          quiet = TRUE)[2],
+           "AWS_DEFAULT_REGION" = scan("s3-keys.txt",
+                                       what = "character",
+                                       quiet = TRUE)[3])
+
+## Create project folders if they don't exist.  <-- purrr this! ----
 
 # Create `data-gaps` folder if it doesn't exist.
 if(!dir.exists("./data-gaps/")) dir.create("./data-gaps/")
@@ -54,7 +65,7 @@ if(!dir.exists("./reports/")) dir.create("./reports/")
 # Create `output` folder if it doesn't exist.
 if(!dir.exists("./output/")) dir.create("./output/")
 
-## Define variables.
+## Define variables. ----
 
 # Define water right types to include in dataset.
 wr_type_list <- c("Appropriative",
@@ -343,5 +354,5 @@ save(wr_info,
      file = "./output/wasdet-wrinfo.RData")
 put_object(file = "./output/wasdet-wrinfo.RData", 
            object = "wasdet-wrinfo.RData", 
-           bucket = "dwr-enf-shiny",
+           bucket = "dwr-shiny-apps",
            multipart = TRUE)

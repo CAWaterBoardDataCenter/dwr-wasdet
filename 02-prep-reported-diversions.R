@@ -8,9 +8,20 @@ library(future)
 library(furrr)
 library(aws.s3)
 
-## Initialization. ----
+# Initialization. ----
 
-download_divs <- TRUE
+download_divs <- FALSE
+
+## Load S3 keys. ----
+Sys.setenv("AWS_ACCESS_KEY_ID" = scan("s3-keys.txt",
+                                      what = "character",
+                                      quiet = TRUE)[1],
+           "AWS_SECRET_ACCESS_KEY" = scan("s3-keys.txt",
+                                          what = "character",
+                                          quiet = TRUE)[2],
+           "AWS_DEFAULT_REGION" = scan("s3-keys.txt",
+                                       what = "character",
+                                       quiet = TRUE)[3])
 
 # Load functions.
 if(download_divs) source("f_getReportedDivs_FF.R")
@@ -152,7 +163,7 @@ save(demand,
      file = outfile_loc)
 put_object(file = outfile_loc,
           object = "wasdet-demands.RData",
-          bucket = "dwr-enf-shiny",
+          bucket = "dwr-shiny-apps",
           multipart = TRUE)
 
 # Save demand test set for shorter load times.
@@ -163,5 +174,25 @@ save(demand,
      file = test_data_loc)
 put_object(file = test_data_loc,
            object = "wasdet-demands-test-set.RData",
-           bucket = "dwr-enf-shiny",
+           bucket = "dwr-shiny-apps",
            multipart = TRUE)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -38,10 +38,8 @@ vignettes/*.pdf
 # Mac files
 .DS_Store
 
-# R Environment Variables
-.Renviron
-
 # Project files and folders
+s3-keys.txt
 old
 explore
 reports
