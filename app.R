@@ -62,22 +62,36 @@ if (Sys.info()["nodename"] == "Home-iMac.local") {
 
 # Load data from AWS S3 bucket. ----
 
-# Water Right Info.
-s3load(object = "wasdet-wrinfo.RData",
-       bucket = "dwr-enf-shiny")
+## Load S3 keys. ----
+Sys.setenv("AWS_ACCESS_KEY_ID" = scan("s3-keys.txt",
+                                      what = "character",
+                                      quiet = TRUE)[1],
+           "AWS_SECRET_ACCESS_KEY" = scan("s3-keys.txt",
+                                          what = "character",
+                                          quiet = TRUE)[2],
+           "AWS_DEFAULT_REGION" = scan("s3-keys.txt",
+                                       what = "character",
+                                       quiet = TRUE)[3])
 
-# Demand data. Load smaller test set if on local machine for testing.
+## Load Water Right Info. ----
+s3load(object = "wasdet-wrinfo.RData",
+       bucket = "dwr-shiny-apps")
+
+## Load Demand Data. ----
+## Load smaller test set if on local machine for testing.
 if (Sys.info()["nodename"] == "Home-iMac.local") {
-       s3load(object = "wasdet-demands-test-set.RData", bucket = "dwr-enf-shiny")
+       s3load(object = "wasdet-demands-test-set.RData", bucket = "dwr-shiny-apps")
 } else {
-       s3load(object = "wasdet-demands.RData", bucket = "dwr-enf-shiny")
+       s3load(object = "wasdet-demands.RData", bucket = "dwr-shiny-apps")
 }
 
-# Supply data.
+## Load Supply data. ----
 s3load(object = "wasdet-supplies-forecast.RData",
-       bucket = "dwr-enf-shiny")
+       bucket = "dwr-shiny-apps")
 
-# Gage station location information.
+# Load local data. ----
+
+## Gage station location information. ----
 station_locs <- read_csv("./common/station-locations.csv")
 
 # Define color and shape aesthetics. ----
@@ -149,17 +163,17 @@ ui <- navbarPage(
            "until it is officially released."), 
      style = "color:red"),
   
-  ## Main Tabs.
-  # Explore. ----
+  # Main Tabs. ----
+  ## Explore. ----
   tabPanel("Explore",
            
            fluidRow(
              sidebarLayout(
                
-               ## Sidebar Panel. ----
+               ### Sidebar Panel. ----
                sidebarPanel(width = 2,
                             
-                            ## Select units to display. ----
+                            #### Select units to display. ----
                             radioButtons(inputId = "units_selected",
                                          label = "Select Units:",
                                          choiceNames = list(
@@ -173,7 +187,7 @@ ui <- navbarPage(
                                          selected = "cfs"
                             ),
                             
-                            ### Select HUC-8 watershed. ----
+                            #### Select HUC-8 watershed. ----
                             selectInput(inputId = "huc8_selected",
                                         label = "Select HUC-8 Watershed:",
                                         choices = NULL,
@@ -181,13 +195,13 @@ ui <- navbarPage(
                                         multiple = FALSE
                             ),
                             
-                            ### Filter for watersheds with supply information. ----
+                            #### Filter for watersheds with supply information. ----
                             checkboxInput(inputId = "supply_filter",
                                           label = "Filter for watersheds with available supply information",
                                           value = FALSE
                             ),
                             
-                            ### Select demand scenario(s). ----
+                            #### Select demand scenario(s). ----
                             selectizeInput(inputId = "d_scene_selected",
                                            label = "Select Up To Two Demand Scenarios:",
                                            choices = NULL,
@@ -196,11 +210,11 @@ ui <- navbarPage(
                                            options = list(maxItems = 2)
                             ),
                             
-                            ### Conditional Inputs. ----
+                            #### Conditional Inputs. ----
                             
                             wellPanel(
                               
-                              ### #Select supply scenario(s) for vsd_plot. ----
+                              ##### Select supply scenario(s) for vsd_plot. ----
                               selectizeInput(inputId = "s_scene_selected",
                                              label = "Select Up To Three Supply Scenarios:",
                                              choices = NULL,
@@ -209,14 +223,14 @@ ui <- navbarPage(
                                              options = list(maxItems = 3)
                               ),
                               
-                              #### Select priority year to slice for vsd_plot. ----
+                              ##### Select priority year to slice for vsd_plot. ----
                               selectInput(inputId = "priority_selected",
                                           label = "Select Demand Priority Year:",
                                           choices = NULL,
                                           selected = NULL,
                                           multiple = FALSE),
                               
-                              #### Select water right types to include in dbwrt_plot. ----
+                              ##### Select water right types to include in dbwrt_plot. ----
                               checkboxGroupInput(inputId = "wrt_selected",
                                                  label = "Select Water Right Type(s) to Display:",
                                                  choices = NULL,
@@ -232,7 +246,7 @@ ui <- navbarPage(
                       <img src="jgy_hex.png", height = "50"></p></center></a>')
                ),
                
-               ## Main Panel. ----
+               ### Main Panel. ----
                mainPanel(width = 10,
                          
                          # Plot/Data/Watershed map Tabs.

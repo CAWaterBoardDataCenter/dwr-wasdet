@@ -26,12 +26,20 @@ if(!("package:aws.s3" %in% search())) {
   suppressMessages(library(aws.s3))
 }
 
-### Initialization. ----
+# Initialization. ----
 
 plot_year <- year(Sys.Date())
 
-## Switches.
-
+## Load S3 keys. ----
+Sys.setenv("AWS_ACCESS_KEY_ID" = scan("s3-keys.txt",
+                                      what = "character",
+                                      quiet = TRUE)[1],
+           "AWS_SECRET_ACCESS_KEY" = scan("s3-keys.txt",
+                                          what = "character",
+                                          quiet = TRUE)[2],
+           "AWS_DEFAULT_REGION" = scan("s3-keys.txt",
+                                       what = "character",
+                                       quiet = TRUE)[3])
 
 ## Load and process historical flow statistics data.
 
@@ -131,5 +139,5 @@ save(supply_fc,
      file = outfile_loc)
 put_object(file = outfile_loc,
            object = "wasdet-supplies-forecast.RData",
-           bucket = "dwr-enf-shiny",
+           bucket = "dwr-shiny-apps",
            multipart = TRUE)
