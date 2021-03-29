@@ -52,7 +52,7 @@ if (!("package:DT" %in% search())) {
 
 # Debug #####
 if (Sys.info()["nodename"] == "Home-iMac.local") {
-  source("./explore/test_variable_values.R")
+#  source("./explore/test_variable_values.R")
   if (!("package:reactlog" %in% search())) {
     suppressMessages(library(reactlog))
   }
@@ -237,13 +237,14 @@ ui <- navbarPage(
                                                  selected = NULL)
                             ),
                             
-                            # My logos !!
-                            br(),br(),br(),
+                            #### Logos and Copyright. ----
+                            br(), br(), br(),
                             HTML('<center><p>Built with</p>
                       <p><img src="shiny.png", height = "50">
                       and <img src="RStudio.png", height = "50">
                       by <a href="https://img1.looper.com/img/gallery/keanu-reeves-head-turning-comment-on-the-script-for-matrix/intro-1569601235.jpg">
-                      <img src="jgy_hex.png", height = "50"></p></center></a>')
+                      <img src="jgy_hex.png", height = "50"></p></center></a>'), br(),
+                      HTML(paste("©", year(now()), "State Water Resources Control Board"))
                ),
                
                ### Main Panel. ----
@@ -394,7 +395,7 @@ server <- function(input, output, session) {
     updateSelectInput(session,
                       inputId = "huc8_selected",
                       choices = choices,
-                      selected = "North Fork American")
+                      selected = "Upper San Joaquin")
   })
   
   ## Update demand scenario choices. ----
