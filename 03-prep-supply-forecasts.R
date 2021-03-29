@@ -45,12 +45,13 @@ Sys.setenv("AWS_ACCESS_KEY_ID" = scan("s3-keys.txt",
 
 # Load data.
 supply_hist_stats_raw <- read_csv(file = "./supply-data/SupplyData_Stats.csv",
-                             na = c("#DIV/0!", "#NUM!", "", "NA"))
+                                  na = c("#DIV/0!", "#NUM!", "", "NA"))
 
 # Filter/rename required fields.
 supply_hist_stats <- supply_hist_stats_raw %>%
   select(-wy_mo) %>% 
   rename(huc8_name = huc8,
+         station_id = source_gage,
          rept_month = cy_mo,
          af_monthly = af) %>% 
   filter(stat %in% c("mean", "median", "p10", "p90"))
@@ -67,23 +68,23 @@ supply_hist_stats <- supply_hist_stats %>%
                                                  Above Normal Year",
                                                  "Wet Year")))))
 supply_hist_stats <- supply_hist_stats %>% 
-  mutate(s_scenario = paste0("Historic: Estimated ", 
-                                  toTitleCase(stat), 
-                                  " Unimpaired Flow at ", 
-                                  source_gage, ", ",
-                                  wy_type)) %>% 
-  select(huc8_name, 
+  mutate(s_scenario = paste0("Historic: ", 
+                             toTitleCase(stat), 
+                             " Unimpaired Flow at ", 
+                             station_id, ", ",
+                             wy_type)) %>% 
+  # Build plot_date.
+  mutate(plot_date = as.Date(paste(plot_year, rept_month, 15, sep = "-"))) %>% 
+  
+  select(huc8_name,
+         station_id,
          s_scenario,
-         rept_month,
-         af_monthly,
-         cfs) %>% 
-  arrange(huc8_name, s_scenario, rept_month) %>% 
+         plot_date,
+         cfs,
+         af_monthly) %>% 
   drop_na()
 
-# Build plot_date.
-supply_hist_stats <- supply_hist_stats %>% 
-  mutate(plot_date = as.Date(paste(plot_year, rept_month, 15, sep = "-"))) %>% 
-  select(-rept_month)
+
 
 # Convert af to af/day.
 supply_hist_stats <- supply_hist_stats %>% 
@@ -129,7 +130,9 @@ supply_forecast_wsi <- supply_forecast_wsi %>%
 ## Combine supply sources. ----
 supply_fc <- bind_rows(supply_hist_stats, supply_forecast_wsi)
 
- # Save data files locally and to S3 bucket. ----
+
+
+# Save data files locally and to S3 bucket. ----
 
 # Save locally and to to S3 for dashboard to pick up.
 supply_fc_create_date <- Sys.Date()

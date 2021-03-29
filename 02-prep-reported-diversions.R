@@ -10,7 +10,8 @@ library(aws.s3)
 
 # Initialization. ----
 
-download_divs <- FALSE
+download_divs <- TRUE
+save_test_set <- TRUE
 
 ## Load S3 keys. ----
 Sys.setenv("AWS_ACCESS_KEY_ID" = scan("s3-keys.txt",
@@ -62,9 +63,10 @@ diversions <- diversions_raw %>% clean_names() %>%
          -water_right_id) %>% 
   filter(d_scenario >= 2011 & d_scenario < (project_year))
 
-# Recode scenario name to be more descriptive.
+# Recode scenario name to be more descriptive, add plot_category.
 diversions <- diversions %>% 
-  mutate(d_scenario = paste0("Reported Diversions - ", d_scenario))
+  mutate(d_scenario = paste0("Reported Diversions - ", d_scenario),
+         plot_category = "demand")
 
 # join wr_info.
 diversions <- diversions %>% 
@@ -74,7 +76,6 @@ diversions <- diversions %>%
                       owner,
                       wr_type,
                       wr_status,
-                      wr_class, 
                       priority,
                       demand_wt), 
             by = "wr_id")
@@ -87,7 +88,7 @@ demand <- future_map(.x = demand,
 
 # Scale diversion amounts by HUC-8 weighting factor.
 demand <- future_map(.x = demand,
-              .f = ~mutate(., af_monthly = af_monthly * demand_wt))
+                     .f = ~mutate(., af_monthly = af_monthly * demand_wt))
 
 # Aggregate diversions by water right id. 
 agg_dem_wrid <- function(x) {
@@ -124,8 +125,8 @@ make_daily_demands <- function(x) {
            owner,
            wr_type,
            wr_status,
-           wr_class, 
            priority,
+           plot_category,
            plot_date,
            af_monthly,
            af_daily,
@@ -162,20 +163,22 @@ save(demand,
      demand_create_date,
      file = outfile_loc)
 put_object(file = outfile_loc,
-          object = "wasdet-demands.RData",
-          bucket = "dwr-shiny-apps",
-          multipart = TRUE)
-
-# Save demand test set for shorter load times.
-demand <- demand[grepl("N", names(demand))]
-test_data_loc <- "./output/wasdet-demands.RData"
-save(demand,
-     demand_create_date,
-     file = test_data_loc)
-put_object(file = test_data_loc,
-           object = "wasdet-demands-test-set.RData",
+           object = "wasdet-demands.RData",
            bucket = "dwr-shiny-apps",
            multipart = TRUE)
+
+if (save_test_set) {
+  # Save demand test set for shorter load times.
+  demand <- demand[grepl("Upper", names(demand))]
+  test_data_loc <- "./output/wasdet-demands-test-set.RData"
+  save(demand,
+       demand_create_date,
+       file = test_data_loc)
+  put_object(file = test_data_loc,
+             object = "wasdet-demands-test-set.RData",
+             bucket = "dwr-shiny-apps",
+             multipart = TRUE)
+}
 
 
 

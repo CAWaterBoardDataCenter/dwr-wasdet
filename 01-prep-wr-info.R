@@ -345,12 +345,12 @@ huc8_layer <- huc8_layer %>%
 ## Save data files locally and to S3 bucket. ----
 
 # Save to S3 for Shiny app to pick up.
-create_date <- Sys.Date()
+wrinfo_create_date <- Sys.Date()
 save(wr_info, 
      pods,
      huc8_layer,
      wr_type_list,
-     create_date,
+     wrinfo_create_date,
      file = "./output/wasdet-wrinfo.RData")
 put_object(file = "./output/wasdet-wrinfo.RData", 
            object = "wasdet-wrinfo.RData", 
