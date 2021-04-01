@@ -158,14 +158,16 @@ ui <- navbarPage(
   # Set theme.
   theme = shinytheme("cerulean"),
   
-  # Prototype Warning.
-  h4(paste("Under Development. Do not rely on data used in this dashboard",
-           "until it is officially released."), 
-     style = "color:red"),
+  
   
   # Main Tabs. ----
   ## Explore. ----
   tabPanel("Explore",
+           
+           # Prototype Warning.
+           p(paste("Under Development. Do not rely on data used in this dashboard",
+                    "until it is officially released."), 
+              style = "color:red"),
            
            fluidRow(
              sidebarLayout(
