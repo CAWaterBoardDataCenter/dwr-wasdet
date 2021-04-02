@@ -140,20 +140,8 @@ ui <- navbarPage(
   useShinyjs(),
   
   # Title.
-  title = div(img(src = "DWR-ENF-Logo.png",
-                  style = "position: relative;
-                  margin:-15px 0px;
-                  display:right-align;"),
-              paste("DWR-WaSDET: Division of Water Rights",
-                    "Water Supply/Demand Exploration Tool")),
-  tags$head(
-    tags$style(HTML('.navbar-nav > li > a, .navbar-brand {
-                            padding-top:-6px !important; 
-                            padding-bottom:0 !important;
-                            height: 56px;
-                            }
-                           .navbar {min-height:56px !important;}'))
-  ),
+  title = paste("DWR-WaSDET: Division of Water Rights",
+                    "Water Supply/Demand Exploration Tool"),
   
   # Set theme.
   theme = shinytheme("cerulean"),
@@ -240,13 +228,8 @@ ui <- navbarPage(
                             ),
                             
                             #### Logos and Copyright. ----
-                            br(), br(), br(),
-                            HTML('<center><p>Built with</p>
-                      <p><img src="shiny.png", height = "50">
-                      and <img src="RStudio.png", height = "50">
-                      by <a href="https://img1.looper.com/img/gallery/keanu-reeves-head-turning-comment-on-the-script-for-matrix/intro-1569601235.jpg">
-                      <img src="jgy_hex.png", height = "50"></p></center></a>'), br(),
-                      HTML(paste("©", year(now()), "State Water Resources Control Board"))
+                            HTML('<center><p><img src="DWR-ENF-Logo 2048.png", height = "150"></p></center>'), 
+                            HTML(paste("©", year(now()), "State Water Resources Control Board"))
                ),
                
                ### Main Panel. ----
