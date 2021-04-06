@@ -350,7 +350,7 @@ ui <- fluidPage( # Start fluidpage_1
                                  icon = icon("faucet"),
                                  "Demand Scenarios", br(),
                                  "Content Goes Here",br(),br(),
-                                 includeMarkdown("explore/temp_data_descrip.md")),
+                                 includeMarkdown("docs/temp_data_descrip.md")),
                         
                         tabPanel("Supply Scenarios",
                                  icon = icon("water"),
