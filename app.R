@@ -435,7 +435,7 @@ server <- function(input, output, session) {
   ## Filter for watersheds that have supply data. ----
   observeEvent(input$supply_filter, {
     if (input$supply_filter) { 
-      choices <- sort(names(demand)[names(demand) %in% supply$huc8_name]) 
+      choices <- sort(names(demand)[names(demand) %in% names(supply)]) 
     } else { 
       choices <- sort(names(demand))
     }
@@ -456,7 +456,7 @@ server <- function(input, output, session) {
   
   ## Update supply scenario choices. ----
   observeEvent(input$huc8_selected, {
-    choices <- sort(unique(supply[[input$huc8_selected]]$s_scenario))
+    choices <- sort(unique(supply[[input$huc8_selected]]$s_scenario[!grepl("^Current", supply[[input$huc8_selected]]$s_scenario)]))
     updateSelectizeInput(session, 
                          inputId = "s_scene_selected",
                          choices = choices,
@@ -528,7 +528,8 @@ server <- function(input, output, session) {
       {
         # Supply.
         filter(supply[[input$huc8_selected]],
-               s_scenario %in% input$s_scene_selected) %>%
+               s_scenario %in% input$s_scene_selected,
+               plot_category %in% c("Historic", "Forecast")) %>%
           mutate(source = "old",
                  fill_color = NA,
                  plot_category = "supply") %>%
