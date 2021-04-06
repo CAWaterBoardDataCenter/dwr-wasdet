@@ -167,7 +167,7 @@ ui <- fluidPage( # Start fluidpage_1
              title =
                div(
                  img(
-                   src = "DWR-ENF-Logo-20148.png",
+                   src = "DWR-ENF-Logo-2048.png",
                    height = 50,
                  ),
                  app_title
@@ -257,12 +257,9 @@ ui <- fluidPage( # Start fluidpage_1
                                        ),
                                        
                                        ##### Copyright. ----
-                                       br(),br(),br(),
-                                       HTML('<center><p>Built with</p>
-                      <p><img src="shiny.png", height = "50">
-                      and <img src="RStudio.png", height = "50">
-                      by <a href="https://img1.looper.com/img/gallery/keanu-reeves-head-turning-comment-on-the-script-for-matrix/intro-1569601235.jpg">
-                      <img src="jgy_hex.png", height = "50"></p></center></a>')
+                                       HTML('<center><img src="waterboards_logo_high_res.jpg", width = "75%"></center>'),
+                                       HTML(paste("<center>©", year(now()), 
+                                                  "State Water Resources Control Board</center>"))
                           ),
                       
                       #### Main Panel. ----
@@ -497,7 +494,7 @@ server <- function(input, output, session) {
     bind_rows(
       {
         # Demand.
-        filter(demand[[huc8_selected]], 
+        filter(demand[[input$huc8_selected]], 
                d_scenario %in% input$d_scene_selected) %>%
           mutate(fill_color = if_else(priority == "Statement Demand",
                                       "Statement Demand",
@@ -530,7 +527,7 @@ server <- function(input, output, session) {
       }, 
       {
         # Supply.
-        filter(supply[[huc8_selected]],
+        filter(supply[[input$huc8_selected]],
                s_scenario %in% input$s_scene_selected) %>%
           mutate(source = "old",
                  fill_color = NA,
