@@ -31,15 +31,7 @@ if(!("package:aws.s3" %in% search())) {
 plot_year <- year(Sys.Date())
 
 ## Load S3 keys. ----
-Sys.setenv("AWS_ACCESS_KEY_ID" = scan("s3-keys.txt",
-                                      what = "character",
-                                      quiet = TRUE)[1],
-           "AWS_SECRET_ACCESS_KEY" = scan("s3-keys.txt",
-                                          what = "character",
-                                          quiet = TRUE)[2],
-           "AWS_DEFAULT_REGION" = scan("s3-keys.txt",
-                                       what = "character",
-                                       quiet = TRUE)[3])
+source("load-s3-keys.R")
 
 ## Load and process historical flow statistics data.
 
@@ -86,11 +78,13 @@ supply_hist_stats <- supply_hist_stats %>%
 
 
 
-# Convert af to af/day.
+# Convert af to af/day, add plot_category column.
 supply_hist_stats <- supply_hist_stats %>% 
-  mutate(af_daily = af_monthly / as.numeric(days_in_month(plot_date))) %>% 
+  mutate(af_daily = af_monthly / as.numeric(days_in_month(plot_date)),
+         plot_category = "historic") %>% 
   select(huc8_name,
          s_scenario,
+         plot_category,
          plot_date,
          af_monthly,
          af_daily,
@@ -98,6 +92,42 @@ supply_hist_stats <- supply_hist_stats %>%
   arrange(huc8_name,
           s_scenario,
           plot_date)
+
+## Load and process yearly historic flow data.
+
+# Load data.
+supply_hist_annual_raw <- read_csv(file = "./supply-data/historical/fnf_historic_years_combined.csv",
+                                   na = c("#DIV/0!", "#NUM!", "", "NA"))
+
+# Filter/rename required fields.
+supply_hist_annual <- supply_hist_annual_raw %>%
+  select(-wy_mo) %>% 
+  rename(station_id = source_gage,
+         rept_month = cy_mo,
+         af_monthly = af)
+
+supply_hist_annual <- supply_hist_annual %>% 
+  mutate(s_scenario = paste0("Historic: ", cy, " Unimpaired Flow at ", station_id)) %>% 
+  # Build plot_date.
+  mutate(plot_date = as.Date(paste(plot_year, rept_month, 15, sep = "-"))) %>% 
+  
+  select(huc8_name,
+         s_scenario,
+         plot_date,
+         af_monthly,
+         cfs) %>% 
+  drop_na()
+
+# Convert af to af/day, add plot_category column
+supply_hist_annual <- supply_hist_annual %>%
+  mutate(af_daily = af_monthly / as.numeric(days_in_month(plot_date)),
+         plot_category = "historic") %>% 
+  relocate(af_daily, .after = af_monthly) %>% 
+  relocate(plot_category, .after = s_scenario) %>%
+  arrange(huc8_name,
+          s_scenario,
+          plot_date)
+
 
 # Load and process B120 WSI supply data. ----
 
@@ -128,19 +158,21 @@ supply_forecast_wsi <- supply_forecast_wsi %>%
           plot_date)
 
 ## Combine supply sources. ----
-supply_fc <- bind_rows(supply_hist_stats, supply_forecast_wsi)
+supply <- bind_rows(supply_hist_stats, 
+                    supply_hist_annual,
+                    supply_forecast_wsi)
 
 
 
 # Save data files locally and to S3 bucket. ----
 
 # Save locally and to to S3 for dashboard to pick up.
-supply_fc_create_date <- Sys.Date()
-outfile_loc <- "./output/wasdet-supplies-forecast.RData"
-save(supply_fc,
-     supply_fc_create_date,
+supply_create_date <- Sys.Date()
+outfile_loc <- "./output/wasdet-supplies-test01.RData"
+save(supply,
+     supply_create_date,
      file = outfile_loc)
 put_object(file = outfile_loc,
-           object = "wasdet-supplies-forecast.RData",
+           object = "wasdet-supplies-test01.RData",
            bucket = "dwr-shiny-apps",
            multipart = TRUE)
