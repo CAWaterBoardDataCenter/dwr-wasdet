@@ -158,7 +158,7 @@ plan(sequential)
 
 # Save to S3 for Shiny app to pick up.
 demand_create_date <- Sys.Date()
-outfile_loc <- "./output/wasdet-demands.RData"
+outfile_loc <- "./output/wasdet-demands-develop.RData"
 save(demand,
      demand_create_date,
      file = outfile_loc)
