@@ -85,13 +85,14 @@ s3load(object = "wasdet-wrinfo.RData",
 ## Load Demand Data. ----
 ## Load smaller test set if on local machine for testing.
 if (Sys.info()["nodename"] == "Home-iMac.local") {
-  s3load(object = "wasdet-demands-test-set.RData", bucket = "dwr-shiny-apps")
+  # s3load(object = "wasdet-demands-test-set.RData", bucket = "dwr-shiny-apps")
+  s3load(object = "wasdet-demands.RData", bucket = "dwr-shiny-apps")
 } else {
   s3load(object = "wasdet-demands.RData", bucket = "dwr-shiny-apps")
 }
 
 ## Load Supply data. ----
-s3load(object = "wasdet-supplies-test01.RData",
+s3load(object = "wasdet-supplies_test0407.RData",
        bucket = "dwr-shiny-apps")
 
 # Load local data. ----
