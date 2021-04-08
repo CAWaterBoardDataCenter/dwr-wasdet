@@ -40,7 +40,7 @@ priority_order <- c(c(project_year:1914),
                     "Environmental Demand")
 
 # Load wr_info data.
-load("./output/wasdet-wrinfo.RData")
+load("./output/wasdet-wrinfo-develop.RData")
 
 # Download diversion data from WRUDS link.
 if(download_divs) {
@@ -163,19 +163,19 @@ save(demand,
      demand_create_date,
      file = outfile_loc)
 put_object(file = outfile_loc,
-           object = "wasdet-demands.RData",
+           object = "wasdet-demands-develop.RData",
            bucket = "dwr-shiny-apps",
            multipart = TRUE)
 
 if (save_test_set) {
   # Save demand test set for shorter load times.
   demand <- demand[grepl("Upper", names(demand))]
-  test_data_loc <- "./output/wasdet-demands-test-set.RData"
+  test_data_loc <- "./output/wasdet-demands-test-set-develop.RData"
   save(demand,
        demand_create_date,
        file = test_data_loc)
   put_object(file = test_data_loc,
-             object = "wasdet-demands-test-set.RData",
+             object = "wasdet-demands-test-set-develop.RData",
              bucket = "dwr-shiny-apps",
              multipart = TRUE)
 }

@@ -231,11 +231,11 @@ supply <- map(.x = supply,
 
 # Save locally and to to S3 for dashboard to pick up.
 supply_create_date <- Sys.Date()
-outfile_loc <- "./output/wasdet-supplies.RData"
+outfile_loc <- "./output/wasdet-supplies-develop.RData"
 save(supply,
      supply_create_date,
      file = outfile_loc)
 put_object(file = outfile_loc,
-           object = "wasdet-supplies.RData",
+           object = "wasdet-supplies-develop.RData",
            bucket = "dwr-shiny-apps",
            multipart = TRUE)

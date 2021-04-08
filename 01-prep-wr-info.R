@@ -351,8 +351,8 @@ save(wr_info,
      huc8_layer,
      wr_type_list,
      wrinfo_create_date,
-     file = "./output/wasdet-wrinfo.RData")
-put_object(file = "./output/wasdet-wrinfo.RData", 
-           object = "wasdet-wrinfo.RData", 
+     file = "./output/wasdet-wrinfo-develop.RData")
+put_object(file = "./output/wasdet-wrinfo-develop.RData", 
+           object = "wasdet-wrinfo-develop.RData", 
            bucket = "dwr-shiny-apps",
            multipart = TRUE)
