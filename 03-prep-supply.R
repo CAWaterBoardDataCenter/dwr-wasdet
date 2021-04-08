@@ -22,6 +22,9 @@ if(!("package:lubridate" %in% search())) {
 if(!("package:stringr" %in% search())) {
   suppressMessages(library(stringr))
 }
+if(!("package:purrr" %in% search())) {
+  suppressMessages(library(purrr))
+}
 if(!("package:aws.s3" %in% search())) {
   suppressMessages(library(aws.s3))
 }
@@ -69,31 +72,24 @@ supply_hist_stats <- supply_hist_stats %>%
   mutate(plot_date = as.Date(paste(plot_year, rept_month, 15, sep = "-"))) %>% 
   
   select(huc8_name,
-         station_id,
+         #   station_id,
          s_scenario,
          plot_date,
-         cfs,
-         af_monthly) %>% 
+         af_monthly,
+         cfs) %>% 
   drop_na()
 
-
-
-# Convert af to af/day, add plot_category column.
+# Convert af to af/day, add plot_category column
 supply_hist_stats <- supply_hist_stats %>% 
   mutate(af_daily = af_monthly / as.numeric(days_in_month(plot_date)),
          plot_category = "historic") %>% 
-  select(huc8_name,
-         s_scenario,
-         plot_category,
-         plot_date,
-         af_monthly,
-         af_daily,
-         cfs) %>% 
+  relocate(af_daily, .after = af_monthly) %>% 
+  relocate(plot_category, .after = s_scenario) %>%
   arrange(huc8_name,
           s_scenario,
           plot_date)
 
-## Load and process yearly historic flow data.
+## Load and process yearly historic flow data. ----
 
 # Load data.
 supply_hist_annual_raw <- read_csv(file = "./supply-data/historical/fnf_historic_years_combined.csv",
@@ -112,6 +108,7 @@ supply_hist_annual <- supply_hist_annual %>%
   mutate(plot_date = as.Date(paste(plot_year, rept_month, 15, sep = "-"))) %>% 
   
   select(huc8_name,
+         #       station_id,
          s_scenario,
          plot_date,
          af_monthly,
@@ -129,6 +126,7 @@ supply_hist_annual <- supply_hist_annual %>%
           plot_date)
 
 
+
 # Load and process B120 WSI supply data. ----
 
 # PLACEHOLDER
@@ -143,12 +141,14 @@ supply_forecast_wsi <- supply_forecast_wsi_raw %>%
   mutate(plot_date = as.Date(paste(plot_year, rept_month, 15, sep = "-"))) %>% 
   select(-rept_month)
 
-# Convert af to af_daily and cfs.
+# Convert af to af_daily and cfs, add plot_category.
 supply_forecast_wsi <- supply_forecast_wsi %>% 
   mutate(af_daily = af_monthly / as.numeric(days_in_month(plot_date)),
-         cfs = af_daily * 0.504166667) %>% 
+         cfs = af_daily * 0.504166667,
+         plot_category = "forecast") %>% 
   select(huc8_name,
          s_scenario,
+         plot_category,
          plot_date,
          af_monthly,
          af_daily,
@@ -157,22 +157,85 @@ supply_forecast_wsi <- supply_forecast_wsi %>%
           s_scenario,
           plot_date)
 
-## Combine supply sources. ----
-supply <- bind_rows(supply_hist_stats, 
+## Combine supply sources.
+supply <- bind_rows(supply_hist_stats,
                     supply_hist_annual,
                     supply_forecast_wsi)
 
+# Split diversions into list of tibbles by scenario.
+supply <- split(x = supply, 
+                f = supply$huc8_name)
+supply <- map(.x = supply,
+              .f = ~ select(., -huc8_name))
 
+# # Retrieve CDEC Real-Time Full Natural Flows. ----
+# 
+# ## Scrape start and stop dates. ----
+# cdec_start_date <- paste0(plot_year, "-01-01")
+# cdec_end_date <- as.character(as.Date(now()))
+# 
+# ## Load list of CDEC stations to pull data from. ----
+# cdec_sources <- read_csv("./common/cdec-actual-fnf-stations-daily.csv")
+# 
+# ## Download data from CDEC. ----
+# supply_rt_raw <- list()
+# get_cdec_fnfs <- function(x) {
+#   cat(paste0("Processing Station ", x, "...\n\n"))
+#   source_url <- paste0("https://cdec.water.ca.gov/dynamicapp/req/CSVDataServlet?Stations=", x,
+#                        "&SensorNums=8&dur_code=D&Start=", cdec_start_date, 
+#                        "&End=", cdec_end_date)
+#   supply_rt_raw[[x]] <- read_csv(file = source_url,
+#                                  na = c("NA", "---"))
+# }
+# supply_rt_raw <- map(.x = cdec_sources$station_id,
+#                      .f = get_cdec_fnfs)
+# names(supply_rt_raw) <- cdec_sources$huc8_name
+# 
+# ## Munge data. ----
+# clean_cdec_fnfs <- function(x) {
+#   x <- x %>% 
+#     clean_names() %>% 
+#     rename(plot_date = obs_date,
+#            cfs = value) %>% 
+#     
+#     # Remove negative negative flows. These are misleading and don't contribute
+#     # to the story being told.
+#     filter(cfs > 0) %>% 
+#     
+#     mutate(s_scenario = paste("Current Year: Unimpaired flow at", 
+#                               station_id),
+#            plot_category = "current",
+#            plot_date = as.Date(plot_date),
+#            af_daily = cfs / 0.504166667,
+#            af_monthly = af_daily * as.numeric(days_in_month(plot_date))
+#            ) %>% 
+#     select(station_id,
+#            s_scenario,
+#            plot_category,
+#            plot_date,
+#            af_monthly,
+#            af_daily,
+#            cfs) %>% 
+#     drop_na()
+#   
+# }
+# supply_rt <- map(.x = supply_rt_raw,
+#                  .f = clean_cdec_fnfs)
+# 
+# # Join real-time supply data to appropriate watershed table(s). ----
+# merged_tables <- map2(supply[names(supply_rt)], supply_rt, bind_rows)
+# supply <- supply[!names(supply) %in% names(merged_tables)]
+# supply <- c(supply, merged_tables)
 
 # Save data files locally and to S3 bucket. ----
 
 # Save locally and to to S3 for dashboard to pick up.
 supply_create_date <- Sys.Date()
-outfile_loc <- "./output/wasdet-supplies-test01.RData"
+outfile_loc <- "./output/wasdet-supplies.RData"
 save(supply,
      supply_create_date,
      file = outfile_loc)
 put_object(file = outfile_loc,
-           object = "wasdet-supplies-test01.RData",
+           object = "wasdet-supplies.RData",
            bucket = "dwr-shiny-apps",
            multipart = TRUE)
