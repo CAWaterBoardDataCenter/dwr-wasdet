@@ -84,7 +84,7 @@ if (Sys.info()["nodename"] == "Home-iMac.local") {
 }
 
 ## Load Supply data. ----
-s3load(object = "wasdet-supplies-forecast.RData",
+s3load(object = "wasdet-supplies.RData",
        bucket = "dwr-shiny-apps")
 
 # Load local data. ----
