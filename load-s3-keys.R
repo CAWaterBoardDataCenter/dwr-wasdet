@@ -1,0 +1,9 @@
+Sys.setenv("AWS_ACCESS_KEY_ID" = scan("s3-keys.txt",
+                                      what = "character",
+                                      quiet = TRUE)[1],
+           "AWS_SECRET_ACCESS_KEY" = scan("s3-keys.txt",
+                                          what = "character",
+                                          quiet = TRUE)[2],
+           "AWS_DEFAULT_REGION" = scan("s3-keys.txt",
+                                       what = "character",
+                                       quiet = TRUE)[3])

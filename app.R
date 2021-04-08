@@ -68,15 +68,7 @@ app_title <- paste("DWR-WaS/DET: Division of Water Rights",
 # Load data from AWS S3 bucket. ----
 
 ## Load S3 keys. ----
-Sys.setenv("AWS_ACCESS_KEY_ID" = scan("s3-keys.txt",
-                                      what = "character",
-                                      quiet = TRUE)[1],
-           "AWS_SECRET_ACCESS_KEY" = scan("s3-keys.txt",
-                                          what = "character",
-                                          quiet = TRUE)[2],
-           "AWS_DEFAULT_REGION" = scan("s3-keys.txt",
-                                       what = "character",
-                                       quiet = TRUE)[3])
+source("load-s3-keys.R")
 
 ## Load Water Right Info. ----
 s3load(object = "wasdet-wrinfo.RData",
@@ -85,7 +77,8 @@ s3load(object = "wasdet-wrinfo.RData",
 ## Load Demand Data. ----
 ## Load smaller test set if on local machine for testing.
 if (Sys.info()["nodename"] == "Home-iMac.local") {
-  s3load(object = "wasdet-demands-test-set.RData", bucket = "dwr-shiny-apps")
+  # s3load(object = "wasdet-demands-test-set.RData", bucket = "dwr-shiny-apps")
+  s3load(object = "wasdet-demands.RData", bucket = "dwr-shiny-apps")
 } else {
   s3load(object = "wasdet-demands.RData", bucket = "dwr-shiny-apps")
 }
@@ -411,7 +404,7 @@ server <- function(input, output, session) {
            ifelse(length(input$d_scene_selected) == 2, 835, "auto"))
   })
   
-  # Observers. ----
+  # OBSERVERS. ----
   
   ## Control input selectors. ----
   observe({
@@ -435,7 +428,7 @@ server <- function(input, output, session) {
   ## Filter for watersheds that have supply data. ----
   observeEvent(input$supply_filter, {
     if (input$supply_filter) { 
-      choices <- sort(names(demand)[names(demand) %in% supply_fc$huc8_name]) 
+      choices <- sort(names(demand)[names(demand) %in% names(supply)])
     } else { 
       choices <- sort(names(demand))
     }
@@ -456,7 +449,7 @@ server <- function(input, output, session) {
   
   ## Update supply scenario choices. ----
   observeEvent(input$huc8_selected, {
-    choices <- unique(filter(supply_fc, huc8_name %in% input$huc8_selected)$s_scenario)
+    choices <- sort(unique(supply[[input$huc8_selected]]$s_scenario))
     updateSelectizeInput(session, 
                          inputId = "s_scene_selected",
                          choices = choices,
@@ -527,8 +520,7 @@ server <- function(input, output, session) {
       }, 
       {
         # Supply.
-        filter(supply_fc,
-               huc8_name %in% input$huc8_selected,
+        filter(supply[[input$huc8_selected]],
                s_scenario %in% input$s_scene_selected) %>%
           mutate(source = "old",
                  fill_color = NA,
@@ -904,7 +896,7 @@ server <- function(input, output, session) {
                          fillColor = ~map_priority_pal(priority), 
                          label = lapply(pod_labs, HTML)
         ) %>% 
-        addControl(html = "Legend not provided. Too many categories.",
+        addControl(html = "See plot legend for color categories.",
                    position = "topright")
     }
     

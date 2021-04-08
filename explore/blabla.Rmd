@@ -1,0 +1,24 @@
+---
+title: "blabla"
+output:
+   flexdashboard::flex_dashboard:
+   orientation: rows
+   social: menu
+   source_code: embed
+   theme: cerulean
+runtime: shiny
+---
+
+# Inputs {.sidebar data-width=150}
+
+```{r}
+selectInput("book", label = "libro", choices = c("dq1605", "dq1615"), selected="dq1605")
+selectInput("chapter", label = "capítulo",choices = 0:54, selected=0)
+
+observeEvent(input$book, {
+   y <- input$book
+   if (is.null(y)) y <- "dq1605"
+   chs <- if(y=="dq1605") 0:54 else 0:74
+   updateSelectInput(session, "chapter", choices = chs, selected = max(chs))
+})
+```

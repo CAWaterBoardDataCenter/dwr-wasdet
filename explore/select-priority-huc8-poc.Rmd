@@ -1,0 +1,93 @@
+---
+title: "Select Priority Year Prototype"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+
+# Load libraries.
+library(shiny)
+library(flexdashboard)
+library(dplyr)
+library(wesanderson)
+library(ggplot2)
+
+load("./output/demand_test_daily.RData")
+
+# Create color palette for demand bins.
+demand_order <- ordered(c("Junior Post-14",
+                          "Post-14",
+                          "Statement Demand",
+                          "Environmental Demand"))
+demand_pal <- wes_palettes$GrandBudapest1[c(2, 1, 4, 3)]
+names(demand_pal) <- demand_order
+
+```
+
+## Inputs {.sidebar data-width="300"}
+
+```{r}
+
+# Select watershed to view.
+selectInput(inputId = "huc8_selected",
+            label = "Select Watershed to View:",
+            choices = sort(na.omit(unique(demand_test$huc8_name))),
+            selected = "San Pablo Bay", # sample(unique(demand_test$huc8_name), 1),
+            multiple = FALSE)
+
+# Select priority year to slice.
+selectInput(inputId = "priority_selected",
+            label = "Select Priority Year:",
+            choices = sort(na.omit(unique(demand_test$p_year)),
+                           decreasing = TRUE),
+            selected = max(demand_test$p_year, na.rm = TRUE),
+            multiple = FALSE)
+```
+
+## Column {.tabset data-width="150"}
+
+### Plot
+
+```{r}
+
+
+
+# Recode fill_color based on selected priority.
+plot_demand <- reactive({
+  demand_test %>% 
+    filter(huc8_name %in% input$huc8_selected) %>% 
+    mutate(fill_color = if_else(priority == "Statement Demand",
+                                "Statement Demand",
+                                if_else(priority == "Statement Demand",
+                                        "Statement Demand",
+                                        if_else(p_year >= input$priority_selected,
+                                                "Junior Post-14", "Post-14"))),
+           fill_color = ordered(fill_color, levels = demand_order)) %>% 
+    group_by(rept_date, fill_color) %>% 
+    summarize(demand = sum(demand, na.rm = TRUE),
+              demand_daily = sum(demand_daily, na.rm = TRUE),
+              .groups = "drop")
+})
+
+# Render the plot. #######################
+renderPlot({
+
+  ggplot(data = plot_demand(),
+            aes(x = rept_date,
+                y = demand_daily,
+                group = fill_color,
+                fill = fill_color)) +
+  geom_area(position = "stack") +
+  scale_fill_manual(values = demand_pal)
+
+})
+
+```
+
+### Water Right Info
+
+### Statewide Watershed Map

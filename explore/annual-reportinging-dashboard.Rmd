@@ -1,0 +1,532 @@
+---
+title: "2019 Diversion & Use Report Submittal Summary Dashboard"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+
+# Load libraries. ----
+library(aws.s3)
+library(shiny)
+library(flexdashboard)
+library(tidyverse)
+library(spdplyr)
+library(plotly)
+library(leaflet)
+library(DT)
+library(rgdal)
+library(wesanderson)
+
+# Define reporting year
+dashboard_year <- 2019
+
+# Define color palettes for plots. Yay Wes!
+pal1 <- c(wes_palette("Darjeeling1"), wes_palette("Darjeeling2"))
+
+# Water Right type list.
+wr_type_list <- c("Appropriative",
+                  "Statement of Div and Use",
+                  "Registration Domestic",
+                  "Registration Irrigation",
+                  "Registration Livestock",
+                  "Registration Cannabis",
+                  "Stockpond",
+                  "Federal Claims",
+                  "Federal Stockponds",
+                  "Groundwater Recordation")
+
+# Load data files from S3 bucket.
+s3load(object = "reporting-dashboard-data-2019.RData",
+       bucket = "dwr-enf-shiny")
+
+completeness <- reporting %>% 
+  group_by(wr_type) %>% 
+  summarize(n_rights = n(),
+            pct_complete = round(100 * (sum(!is.na(report_filed_date)) / n()), 0),
+            .groups = "drop")
+
+# Load Calwater HU polygon geoJSON file.
+cw_shape_data <- readOGR(dsn = "./gis/Calwater_HU",
+                     layer = "Calwater_HU")
+cw_shape_data <- spTransform(cw_shape_data,
+                             CRS("+proj=longlat +datum=WGS84 +no_defs"))
+
+```
+
+Reporting Compliance Rates
+================
+
+Column {data-width=700 .tabset}
+-----------------------------------------------------------------------
+
+### Reporting By Water Right Type
+
+```{r wr-type-plot}
+
+## Calculate Cumulative compliance rates by water right type. ----
+
+wr_type_cumulative <- reporting %>% 
+  arrange(wr_type, report_filed_date) %>% 
+  group_by(wr_type, report_filed_date) %>% 
+  summarize(report_count = n(), .groups = "drop") %>% 
+  group_by(wr_type) %>% 
+  mutate(cum_report = cumsum(report_count),
+         rept_pct = 100 * (cum_report / sum(report_count)))
+
+ggplotly(
+  wr_type_cumulative %>% drop_na() %>% 
+    {
+      ggplot(.) +
+        geom_line(aes(x = report_filed_date, y = rept_pct, color = wr_type)) +
+        scale_color_manual(name = "Water Right Type", values = pal1) +
+        scale_x_date(date_breaks = "2 months",
+                     date_minor_breaks = "1 month",
+                     date_labels = "%m/%d/%Y") +
+        scale_y_continuous(breaks = seq(0, 100, 10),
+                           limits = c(0, 100)) + 
+        labs(title = "Cumulative Percent Reporting by Water Right Type",
+             x = "Date",
+             y = "Percent Reporting") +
+        theme_minimal()
+    }
+)
+
+```
+
+> Total number of active water rights (Licenses, Permits, Registrations, Certificates, and Claims): `r prettyNum(nrow(reporting), big.mark = ",")`.  
+> Data current through `r format(max(reporting$report_filed_date, na.rm = TRUE), "%B %d, %Y")`.
+
+### Reporting By Due Date
+
+```{r due-date-plot}
+
+due_date_cumulative <- reporting %>%
+  mutate(report_due_date = as.character(format(report_due_date, 
+                                               "%B %d, %Y"))) %>% 
+    arrange(report_due_date, report_filed_date) %>%
+    group_by(report_due_date, report_filed_date) %>%
+    summarize(report_count = n(), .groups = "drop") %>%
+    group_by(report_due_date) %>%
+    mutate(cum_report = cumsum(report_count),
+           rept_pct = 100 * (cum_report / sum(report_count)))
+
+ggplotly(
+  due_date_cumulative %>% drop_na() %>% 
+    {
+      ggplot(.) +
+        geom_line(aes(x = report_filed_date, 
+                      y = rept_pct, 
+                      color = report_due_date)) +
+        scale_color_manual(name = "Report Due Date", 
+                           values = pal1[1:2]) +
+        scale_x_date(date_breaks = "2 months",
+                     date_minor_breaks = "1 month",
+                     date_labels = "%m/%d/%Y") +
+        scale_y_continuous(breaks = seq(0, 100, 10),
+                           limits = c(0, 100)) + 
+        labs(title = "Cumulative Percent Reporting by Due Date",
+             x = "Date",
+             y = "Percent Reporting") +
+        theme_minimal()
+    }
+)
+
+```
+
+> Latest report filed: `r format(max(reporting$report_filed_date, na.rm = TRUE), "%B %d, %Y")`.
+
+Column {data-width=150}
+-----------------------------------------------------------------------
+
+### Percent Reporting: Appropriative Rights
+
+```{r}
+gauge(value = completeness$pct_complete[1],
+      min = 0,
+      max = 100,
+      gaugeSectors(
+  success = c(90, 100), warning = c(75, 89), danger = c(0, 74)
+))
+```
+
+> n = `r prettyNum(completeness$n_rights[1], big.mark = ",")`
+
+### Percent Reporting: Statements
+
+```{r}
+gauge(value = completeness$pct_complete[2],
+      min = 0,
+      max = 100,
+      gaugeSectors(
+  success = c(90, 100), warning = c(75, 89), danger = c(0, 74)
+))
+```
+
+> n = `r prettyNum(completeness$n_rights[2], big.mark = ",")`
+
+### Percent Reporting: Domestic Registrations
+
+```{r}
+gauge(value = completeness$pct_complete[3],
+      min = 0,
+      max = 100,
+      gaugeSectors(
+  success = c(90, 100), warning = c(75, 89), danger = c(0, 74)
+))
+```
+
+> n = `r prettyNum(completeness$n_rights[3], big.mark = ",")`
+
+### Percent Reporting: Irrigation Registrations
+
+```{r}
+gauge(value = completeness$pct_complete[4],
+      min = 0,
+      max = 100,
+      gaugeSectors(
+  success = c(90, 100), warning = c(75, 89), danger = c(0, 74)
+))
+```
+
+> n = `r prettyNum(completeness$n_rights[4], big.mark = ",")`
+
+### Percent Reporting: Livestock Registrations
+
+```{r}
+gauge(value = completeness$pct_complete[5],
+      min = 0,
+      max = 100,
+      gaugeSectors(
+  success = c(90, 100), warning = c(75, 89), danger = c(0, 74)
+))
+```
+
+> n = `r prettyNum(completeness$n_rights[5], big.mark = ",")`
+
+Column {data-width=150}
+-----------------------------------------------------------------------
+
+### Percent Reporting: Cannabis Registrations
+
+```{r}
+gauge(value = completeness$pct_complete[6],
+      min = 0,
+      max = 100,
+      gaugeSectors(
+  success = c(90, 100), warning = c(75, 89), danger = c(0, 74)
+))
+```
+
+> n = `r prettyNum(completeness$n_rights[6], big.mark = ",")`
+
+### Percent Reporting: Stockponds
+
+```{r}
+gauge(value = completeness$pct_complete[7],
+      min = 0,
+      max = 100,
+      gaugeSectors(
+  success = c(90, 100), warning = c(75, 89), danger = c(0, 74)
+))
+```
+
+> n = `r prettyNum(completeness$n_rights[7], big.mark = ",")`
+
+### Percent Reporting: Federal Claims
+
+```{r}
+gauge(value = completeness$pct_complete[8],
+      min = 0,
+      max = 100,
+      gaugeSectors(
+  success = c(90, 100), warning = c(75, 89), danger = c(0, 74)
+))
+```
+
+> n = `r prettyNum(completeness$n_rights[8], big.mark = ",")`
+
+### Percent Reporting: Federal Stockponds
+
+```{r}
+gauge(value = completeness$pct_complete[9],
+      min = 0,
+      max = 100,
+      gaugeSectors(
+  success = c(90, 100), warning = c(75, 89), danger = c(0, 74)
+))
+```
+
+> n = `r prettyNum(completeness$n_rights[9], big.mark = ",")`
+
+### Percent Reporting: Groundwater Recordations
+
+```{r}
+gauge(value = completeness$pct_complete[10],
+      min = 0,
+      max = 100,
+      gaugeSectors(
+  success = c(90, 100), warning = c(75, 89), danger = c(0, 74)
+))
+```
+
+> n = `r prettyNum(completeness$n_rights[10], big.mark = ",")`
+
+Water Right Info
+================
+
+Inputs {.sidebar data-width=300}
+-----------------------------------------------------------------------
+
+```{r}
+# Reporting Status Filter.
+radioButtons(inputId = "filing_status", 
+             label = "Select Reporting Status:",
+             choices = c("Filed" = "filed",
+                         "Did Not File" = "not_filed",
+                         "Both" = "both"),
+             selected = "both")
+
+rep_status_filter <- reactive({
+  
+  if(input$filing_status == "both") {
+    display_df <- reporting
+  }
+  if(input$filing_status == "filed") {
+    display_df <- reporting %>% 
+      filter(!is.na(report_filed_date))
+  }
+  if(input$filing_status == "not_filed") {
+    display_df <- reporting %>% 
+      filter(is.na(report_filed_date))
+  }
+  display_df
+})
+```
+<br>
+
+```{r}
+# Select Watershed(s)
+selectInput(inputId = "ws_selected",
+            label = "Select Watershed(s):",
+            choices = sort(unique(reporting$watershed)),
+            selected = sample(unique(reporting$watershed), 1),
+            multiple = TRUE)
+```
+If you are unsure of the watershed name of the area you are interested in, select the *Watershed Map* tab. Hover your mouse over the area of interest, then select the name in the box above.  
+<br>
+
+```{r}
+# Select/deselect HUC 8 watersheds.
+selectInput(inputId = "huc8_selected",
+            label = "Select HUC8 Watershed(s):",
+            choices = NULL,
+            selected = NULL,
+            multiple = TRUE)
+```
+<br>
+
+```{r}
+# Select Water Right types.
+checkboxGroupInput(inputId = "wrt_selected",
+                   label = "Select Water Right Type(s) to Include:",
+                   choices = wr_type_list,
+                   selected = wr_type_list[1:2])
+
+selected_rights <- reactive({ input$wrt_selected })
+
+ws_selected <- reactive({
+  filter(reporting, watershed %in% input$ws_selected)
+})
+
+observeEvent(ws_selected(), {
+  choices <- unique(ws_selected()$watershed_huc8)
+  updateSelectInput(session, "huc8_selected", choices = choices,
+                    selected = choices)
+})
+
+# Filter Water Rights table.
+reporting_table <- reactive({
+  filter(rep_status_filter(),
+         watershed %in% input$ws_selected,
+         watershed_huc8 %in% input$huc8_selected,
+         wr_type %in% input$wrt_selected) %>% 
+    select("wr_id", 
+           "owner", 
+           "wr_status", 
+           "wr_type",
+           "watershed",
+           "watershed_huc8",
+           "report_due_date", 
+           "report_filed_date")
+})
+
+```
+
+Column {data-width=150 .tabset}
+-----------------------------------------------------------------------
+
+### Water Right Locations
+
+```{r}
+pod_points <- reactive({
+  pod_info %>% 
+    filter(wr_id %in% reporting_table()$wr_id)
+})
+
+ws_poly <- reactive({
+  cw_shape_data %>% filter(HUNAME %in% reporting_table()$watershed)
+})
+
+renderLeaflet({
+  validate(
+    need(nrow(pod_points()) > 0, 
+         paste0("No Data Available.\n",
+                "Please select other Watershed(s) or Water Right Type(s)."))
+  )
+  leaflet() %>%
+    addProviderTiles(providers$CartoDB.Positron) %>%
+    addPolygons(data = ws_poly(),
+                weight = 2,
+                col = "blue",
+                fill = TRUE,
+                fillOpacity = 0,
+                label = ws_poly()$HUNAME,
+                labelOptions = labelOptions(textsize = "12px",
+                                            sticky = TRUE)) %>% 
+    addCircleMarkers(lat = pod_points()$lat, 
+                     lng = pod_points()$lon,
+                     radius = 6,
+                     fillOpacity = 0.7,
+                     stroke = TRUE,
+                     color = "black",
+                     weight = 2,
+                     fillColor = pod_points()$color,
+                     label = pod_points()$wr_id) %>% 
+    addLegend(position = "bottomleft",
+              # color = c("green", "red"),
+              # labels = c("Filed", "Did Not File"),
+              # title = "POD Color Legend",
+              opacity = 1)
+})
+```
+
+> This map initializes by displaying Water Right PODs for a random watershed.
+
+### Water Right Info
+
+```{r}
+DT::renderDataTable(reporting_table(), 
+                    colnames = c("Water Right ID",
+                                 "Primary Owner",
+                                 "Water Right Status",
+                                 "Water Right Type",
+                                 "Watershed",
+                                 "HUC-8 Watershed",
+                                 "Date Report Due",
+                                 "Date Report Filed"),
+                    options = list(pageLength = 25))
+```
+
+> Data current through `r format(max(reporting$report_filed_date, na.rm = TRUE), "%B %d, %Y")`.
+
+### Watershed Map
+
+If you are unsure of the watershed name of the area you are interested in, locate the area in the map below to identify the watershed name to enter in the box to the left.  
+
+```{r water-shed-map}
+
+renderLeaflet({
+  leaflet() %>%
+    addProviderTiles(providers$CartoDB.Positron) %>%
+    addPolygons(data = cw_shape_data,
+                weight = 2,
+                col = "blue",
+                fill = TRUE,
+                fillOpacity = 0,
+                label = cw_shape_data$HUNAME,
+                labelOptions = labelOptions(textsize = "12px",
+                                            sticky = TRUE))
+})
+
+```
+
+About This Dashboard
+================
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+###
+
+#### Annual Diversion and Use Reports
+This could be a great outreach tool that could help people become more educated about the importance of filing, and to show in real time, how concerning the "low" compliance rates are...  
+
+I've added some potential content for the intro page to start..
+
+This Dashboard will enlighten you on the following:  
+
+1. **[Current Reporting Rates](#reporting-rates)** - What percentage of water rights have had their annual reports submitted for the `r dashboard_year` reporting year.
+2. **[Water Right Info](#water-right-info)** - Search by selected watersheds to see who is or isn't reporting and where their points of diversion are located.
+
+##### Why are these reports important to us?  
+Discus why.
+
+##### Where Do I File My Annual Report?
+Go to our [Report Management System](https://rms.waterboards.ca.gov/login.aspx) (RMS) web page. Make sure to have your Water Right ID and Reporting Identifier ready to log in.
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+### 
+#### Your Water Right ID
+```{r}
+
+```
+Your Water Right ID is the unique identifier we use to track your water right in our eWRIMS database. It generally is made up of a letter, followed by six digits. Occasionally, there are additional characters after the sixth digit.  The Water Right ID is also referred to by other names, depending in the situation. Here is a list of the more common names you might hear the Water Right ID being referred as:  
+  
+- ***Statement Number or ID***: Your Water Right ID if it begins with "S"  
+- ***Application Number or ID***: Your Water Right ID if it begins with "S"  
+- ***User Name***: Your Water Right ID for purposes of logging into the [Report Management System](https://rms.waterboards.ca.gov/login.aspx) (RMS).  
+  
+The first letter of the Water Right ID indicates what type of right it is:  
+  
+- "A": Appropriative Water Right (permit or license)  
+- "C": Stockpond Registration  
+- "D": Domestic Registration  
+- "F": Federal Claims and Stockponds  
+- "G": Groundwater Recordation  
+- "H": Irrigation Registration (Cannabis Registration IDs begin with "H5")  
+- "L": Livestock Registration  
+- "S": Diverters that must file Initial and supplemental Statements of Diversion and Use (Riparian claims, Pre-19 Appropriative claims, )
+
+Data Sources and Disclaimers
+================
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+
+### Data Sources
+
+Data used in this dashboard was retrieved from eWRIMs database flat files generated on ***INSERT PULL DATE VARIABLE HERE***. All data in the dataset provided is publicly available via the [eWRIMS Public Portal](https://www.waterboards.ca.gov/waterrights/water_issues/programs/ewrims/).
+
+Row {data-height=100}
+-----------------------------------------------------------------------
+
+### Disclaimers
+
+- This dashboard is for informational purposes only.
+
+### Curator
+<center>
+Name  
+Title  
+BDO  
+Division  
+Section  
+Email
+<br>
+<br>
+Built with ![](www/shiny_50.png) and ![](www/Rstudio_50.png) by ![](www/jgy_hex_50.png).
+</center>

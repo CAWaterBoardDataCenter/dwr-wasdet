@@ -1,0 +1,56 @@
+---
+title: "Layout Development"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+
+# Load libraries.
+library(shiny)
+library(flexdashboard)
+library(dplyr)
+library(wesanderson)
+library(ggplot2)
+library(aws.s3)
+```
+
+## Inputs {.sidebar}
+-------------------------------------
+
+Column {data-width=350}
+-------------------------------------
+    
+### Plots
+    
+```{r}
+```
+   
+Column {data-width=200}
+-------------------------------------
+   
+### Map
+
+```{r}
+```   
+ 
+### Information
+    
+```{r}
+```
+
+
+
+
+
+
+
+
+## Plots {data-width=350}
+------------------
+
+## Map {data-width=350}
+------------------
