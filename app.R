@@ -456,7 +456,7 @@ server <- function(input, output, session) {
   
   ## Update supply scenario choices. ----
   observeEvent(input$huc8_selected, {
-    choices <- unique(filter(supply_fc, huc8_name %in% huc8_selected)$s_scenario)
+    choices <- unique(filter(supply_fc, huc8_name %in% input$huc8_selected)$s_scenario)
     updateSelectizeInput(session, 
                          inputId = "s_scene_selected",
                          choices = choices,
