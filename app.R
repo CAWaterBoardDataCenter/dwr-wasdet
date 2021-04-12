@@ -160,8 +160,8 @@ ui <- fluidPage( # Start fluidpage_1
              title =
                div(
                  img(
-                   src = "DWR-ENF-Logo-2048.png",
-                   height = 50,
+                   src = "dwr-wasdet-hex.png",
+                   height = "50px",
                  ),
                  app_title
                )
@@ -250,7 +250,7 @@ ui <- fluidPage( # Start fluidpage_1
                                        ),
                                        
                                        ##### Copyright. ----
-                                       HTML('<center><img src="waterboards_logo_high_res.jpg", width = "75%"></center>'),
+                                       HTML('<center><img src="waterboards_logo_high_res.jpg", height = "70px"><img src="DWR-ENF-Logo-2048.png", height = "70px"></center>'),
                                        HTML(paste("<center>©", year(now()), 
                                                   "State Water Resources Control Board</center>"))
                           ),
