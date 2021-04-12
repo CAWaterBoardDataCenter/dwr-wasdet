@@ -13,8 +13,8 @@ if (!("package:shinythemes" %in% search())) {
 if (!("package:shinyjs" %in% search())) {
   suppressMessages(library(shinyjs))
 }
-if (!("package:shinipsum" %in% search())) {
-  suppressMessages(library(shinipsum))
+if (!("package:shinycssloaders" %in% search())) {
+  suppressMessages(library(shinycssloaders))
 }
 if (!("package:htmltools" %in% search())) {
   suppressMessages(library(htmltools))
@@ -276,7 +276,7 @@ ui <- fluidPage( # Start fluidpage_1
                                                                                    id = "dbwrt_tab",
                                                                                    fluidRow(
                                                                                      br(),
-                                                                                     plotOutput(outputId = "dbwrt_plot")
+                                                                                     withSpinner(plotOutput(outputId = "dbwrt_plot"))
                                                                                    )
                                                                           ),
                                                                           
@@ -285,7 +285,7 @@ ui <- fluidPage( # Start fluidpage_1
                                                                                    id = "dbp_tab",
                                                                                    fluidRow(
                                                                                      br(),
-                                                                                     plotOutput(outputId = "dbp_plot")
+                                                                                     withSpinner(plotOutput(outputId = "dbp_plot"))
                                                                                    )
                                                                           ),
                                                                           
@@ -293,7 +293,7 @@ ui <- fluidPage( # Start fluidpage_1
                                                                           tabPanel(title = "Supply-Demand Scenarios",
                                                                                    id = "vsd_tab",
                                                                                    fluidRow(
-                                                                                     plotOutput(outputId = "vsd_plot")
+                                                                                     withSpinner(plotOutput(outputId = "vsd_plot"))
                                                                                    )
                                                                           )
                                                                           
