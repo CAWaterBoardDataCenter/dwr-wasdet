@@ -363,15 +363,16 @@ ui <- fluidPage( # Start fluidpage_1
                         icon = icon("info-circle"),
                         tabPanel("About",
                                  icon = icon("info-circle"),
-                                 includeMarkdown("docs/ABOUT.md")),
+                                 includeMarkdown("./docs/ABOUT.md")),
                         tabPanel("How To Use The Filters",
                                  icon = icon("life-ring"),
                                  "How To Use The Filters", br(),
                                  "Content Goes Here"),
-                        tabPanel("FAQ",
+                        tabPanel("Frequently Asked Questions",
                                  icon = icon("question"),
-                                 "Frequently Asked Question", br(),
-                                 "Content Goes Here"),
+                                 includeHTML(("./docs/faq-source.html"))
+                                 # includeMarkdown(("./docs/faq-source.md"))
+                                 ),
                         
                         
                         tabPanel("Report Bugs/Data Issues",
