@@ -47,7 +47,7 @@ getReporteDivsCSV <- function(cred_file = "credentials.csv",
     # Create Selenium server.
     driver <- rsDriver(port = free_port(),
                        browser= "chrome",
-                       chromever = "87.0.4280.88",
+                       chromever = "90.0.4430.24",
                        extraCapabilities = eCaps)
     remDr <- driver[["client"]]
     

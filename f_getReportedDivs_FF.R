@@ -45,9 +45,9 @@ getReporteDivsCSV <- function(cred_file = "credentials.csv",
         browser.tabs.remote.autostart.2 = FALSE,
         browser.tabs.remote.desktopbehavior = FALSE))
     
-    driver <- rsDriver(port = free_port(), 
+    driver <- rsDriver(port = 4567L, # free_port(), 
                    browser = "firefox", 
-                   # version = "3.1.0", 
+                   version = "latest", 
                    # geckover = "0.14.0", 
                    # iedrver = NULL, 
                    # phantomver = "2.1.1",

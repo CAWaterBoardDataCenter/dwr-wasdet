@@ -71,20 +71,19 @@ app_title <- paste("DWR-WaS/DET: Division of Water Rights",
 source("load-s3-keys.R")
 
 ## Load Water Right Info. ----
-s3load(object = "wasdet-wrinfo-develop.RData",
+s3load(object = "wasdet-wrinfo.RData",
        bucket = "dwr-shiny-apps")
 
 ## Load Demand Data. ----
 ## Load smaller test set if on local machine for testing.
 if (Sys.info()["nodename"] == "Home-iMac.local") {
-  s3load(object = "wasdet-demands-test-set-develop.RData", bucket = "dwr-shiny-apps")
-  # s3load(object = "wasdet-demands-develop.RData", bucket = "dwr-shiny-apps")
-} else {
-  s3load(object = "wasdet-demands-develop.RData", bucket = "dwr-shiny-apps")
+  s3load(object = "wasdet-demands-test-set.RData", bucket = "dwr-shiny-apps")
+  } else {
+  s3load(object = "wasdet-demands.RData", bucket = "dwr-shiny-apps")
 }
 
 ## Load Supply data. ----
-s3load(object = "wasdet-supplies-develop.RData",
+s3load(object = "wasdet-supplies.RData",
        bucket = "dwr-shiny-apps")
 
 # Load local data. ----
