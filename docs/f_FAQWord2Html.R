@@ -9,10 +9,10 @@ FAQWord2Html <- function(input_file) {
   setwd(paste0(old_wd, "/docs"))
 
   
-  pandoc_convert(input = input_file,
+  pandoc_convert(input = "bugs-issues.md",
                  to = "html",
-                 from = "docx",
-                 output = "faq.html"
+              #   from = "docx",
+                 output = "bugs-issues.html"
   )
   
   setwd(old_wd)

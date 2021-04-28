@@ -383,7 +383,7 @@ ui <- fluidPage( # Start fluidpage_1
                         #### Report Bugs menu. ----
                         tabPanel("Report Bugs/Data Issues",
                                  icon = icon("bug"),
-                                 includeMarkdown(("./docs/bugs-issues.md"))
+                                 includeHTML(("./docs/bugs-issues.html"))
                         )
              )
   ),
