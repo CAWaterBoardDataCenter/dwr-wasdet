@@ -78,7 +78,7 @@ s3load(object = "wasdet-wrinfo.RData",
 ## Load smaller test set if on local machine for testing.
 if (Sys.info()["nodename"] == "Home-iMac.local") {
   s3load(object = "wasdet-demands-test-set.RData", bucket = "dwr-shiny-apps")
-  } else {
+} else {
   s3load(object = "wasdet-demands.RData", bucket = "dwr-shiny-apps")
 }
 
@@ -165,7 +165,7 @@ ui <- fluidPage( # Start fluidpage_1
                  app_title
                )
   ),
-
+  
   # # Prototype Warning.
   # p(paste("Under Development. Do not rely on data used in this dashboard",
   #          "until it is officially released."), 
@@ -253,87 +253,87 @@ ui <- fluidPage( # Start fluidpage_1
                                        HTML(paste("<center>©", year(now()), 
                                                   "State Water Resources Control Board</center>"))
                           ),
-                      
-                      #### Main Panel. ----
-                      mainPanel(width = 10,
-                                
-                                # Plot/Data/Watershed map Tabs.
-                                tabsetPanel(type = "pills",
-                                            
-                                            ##### Plot tabs. ----
-                                            tabPanel("Plots",
-                                                     fluidRow(
-                                                       
-                                                       # Plot column.
-                                                       column(width = 7,
-                                                              tabsetPanel(id = "plot_tabs",
-                                                                          selected = "Demand by Water Right Type",
-                                                                          type = "pills",
-                                                                          
-                                                                          ###### Demand by Water right type plot tab. ----
-                                                                          tabPanel(title = "Demand by Water Right Type",
-                                                                                   id = "dbwrt_tab",
-                                                                                   fluidRow(
-                                                                                     br(),
-                                                                                     withSpinner(plotOutput(outputId = "dbwrt_plot"))
-                                                                                   )
-                                                                          ),
-                                                                          
-                                                                          ###### Demand by priority plot tab. ----
-                                                                          tabPanel(title = "Demand by Priority",
-                                                                                   id = "dbp_tab",
-                                                                                   fluidRow(
-                                                                                     br(),
-                                                                                     withSpinner(plotOutput(outputId = "dbp_plot"))
-                                                                                   )
-                                                                          ),
-                                                                          
-                                                                          ###### Supply-Demand plot tab. ----
-                                                                          tabPanel(title = "Supply-Demand Scenarios",
-                                                                                   id = "vsd_tab",
-                                                                                   fluidRow(
-                                                                                     withSpinner(plotOutput(outputId = "vsd_plot"))
-                                                                                   )
-                                                                          )
-                                                                          
-                                                                          
-                                                              )      
-                                                       ),
-                                                       
-                                                       ##### Mini map column. ----
-                                                       
-                                                       ###### Mini map. ----
-                                                       column(width = 5,
-                                                              fluidRow(
-                                                                h4("Watershed Location and PODs"),
-                                                                leafletOutput(outputId = "mini_map",
-                                                                              height = "500px",
-                                                                              width = "95%"),
-                                                                br(),
-                                                                
-                                                                ###### Debug notes. ----
-                                                                #   h3("Debug"),
-                                                                
-                                                                #   textOutput("debug_text")
-                                                              )
-                                                       )
-                                                     )
-                                            ),    
-                                            
-                                            ##### Data tab. ----
-                                            tabPanel("Data",
-                                                     br(),
-                                                     h3("Selected Demand Data"),
-                                                     DTOutput(outputId = "demand_data_table")
-                                            ),
-                                            
-                                            ##### California Watershed Map tab. ----
-                                            tabPanel("California Watershed Map",
-                                                     br(),
-                                                     h3("Coming soon...")
-                                            )
-                                )      
-                      )
+                          
+                          #### Main Panel. ----
+                          mainPanel(width = 10,
+                                    
+                                    # Plot/Data/Watershed map Tabs.
+                                    tabsetPanel(type = "pills",
+                                                
+                                                ##### Plot tabs. ----
+                                                tabPanel("Plots",
+                                                         fluidRow(
+                                                           
+                                                           # Plot column.
+                                                           column(width = 7,
+                                                                  tabsetPanel(id = "plot_tabs",
+                                                                              selected = "Demand by Water Right Type",
+                                                                              type = "pills",
+                                                                              
+                                                                              ###### Demand by Water right type plot tab. ----
+                                                                              tabPanel(title = "Demand by Water Right Type",
+                                                                                       id = "dbwrt_tab",
+                                                                                       fluidRow(
+                                                                                         br(),
+                                                                                         withSpinner(plotOutput(outputId = "dbwrt_plot"))
+                                                                                       )
+                                                                              ),
+                                                                              
+                                                                              ###### Demand by priority plot tab. ----
+                                                                              tabPanel(title = "Demand by Priority",
+                                                                                       id = "dbp_tab",
+                                                                                       fluidRow(
+                                                                                         br(),
+                                                                                         withSpinner(plotOutput(outputId = "dbp_plot"))
+                                                                                       )
+                                                                              ),
+                                                                              
+                                                                              ###### Supply-Demand plot tab. ----
+                                                                              tabPanel(title = "Supply-Demand Scenarios",
+                                                                                       id = "vsd_tab",
+                                                                                       fluidRow(
+                                                                                         withSpinner(plotOutput(outputId = "vsd_plot"))
+                                                                                       )
+                                                                              )
+                                                                              
+                                                                              
+                                                                  )      
+                                                           ),
+                                                           
+                                                           ##### Mini map column. ----
+                                                           
+                                                           ###### Mini map. ----
+                                                           column(width = 5,
+                                                                  fluidRow(
+                                                                    h4("Watershed Location and PODs"),
+                                                                    leafletOutput(outputId = "mini_map",
+                                                                                  height = "500px",
+                                                                                  width = "95%"),
+                                                                    br(),
+                                                                    
+                                                                    ###### Debug notes. ----
+                                                                    #   h3("Debug"),
+                                                                    
+                                                                    #   textOutput("debug_text")
+                                                                  )
+                                                           )
+                                                         )
+                                                ),    
+                                                
+                                                ##### Data tab. ----
+                                                tabPanel("Data",
+                                                         br(),
+                                                         h3("Selected Demand Data"),
+                                                         DTOutput(outputId = "demand_data_table")
+                                                ),
+                                                
+                                                ##### California Watershed Map tab. ----
+                                                tabPanel("California Watershed Map",
+                                                         br(),
+                                                         h3("Coming soon...")
+                                                )
+                                    )      
+                          )
                         )
                       )
              ), 
@@ -360,24 +360,31 @@ ui <- fluidPage( # Start fluidpage_1
              ### About/Help. ----
              navbarMenu("About/Help",
                         icon = icon("info-circle"),
+                        
+                        #### About menu. ----
                         tabPanel("About",
                                  icon = icon("info-circle"),
-                                 includeMarkdown("./docs/ABOUT.md")),
+                                 includeMarkdown("./docs/ABOUT.md")
+                        ),
+                        
+                        #### How to Use the Filters menu. ----
                         tabPanel("How To Use The Filters",
                                  icon = icon("life-ring"),
                                  "How To Use The Filters", br(),
-                                 "Content Goes Here"),
+                                 "Content Goes Here"
+                        ),
+                        
+                        #### FAQ menu. ----
                         tabPanel("Frequently Asked Questions",
                                  icon = icon("question"),
-                                 includeHTML(("./docs/faq-source.html"))
-                                 # includeMarkdown(("./docs/faq-source.md"))
-                                 ),
+                                 includeHTML(("./docs/faq.html"))
+                        ),
                         
-                        
+                        #### Report Bugs menu. ----
                         tabPanel("Report Bugs/Data Issues",
                                  icon = icon("bug"),
-                                 "link to GitHub repository,",br(),
-                                 "data maintainer contacts?")
+                                 includeMarkdown(("./docs/bugs-issues.md"))
+                        )
              )
   ),
   selected = "Explore"
