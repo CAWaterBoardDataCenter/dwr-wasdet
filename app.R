@@ -62,8 +62,8 @@ if (Sys.info()["nodename"] == "Home-iMac.local") {
 # Initialization. ----
 
 # Application title.
-app_title <- paste("DWR-WaS/DET: Division of Water Rights",
-                   "Water Supply/Demand Exploration Tool")
+app_title <- paste("Division of Water Rights",
+                   "Water Supply/Demand Visualization Tool")
 
 # Load data from AWS S3 bucket. ----
 
@@ -155,15 +155,8 @@ ui <- fluidPage( # Start fluidpage_1
   theme = shinytheme("cerulean"),
   
   ## Title bar. ----
-  titlePanel(windowTitle = app_title,
-             title =
-               div(
-                 img(
-                   src = "dwr-wasdet-hex.png",
-                   height = "50px",
-                 ),
-                 app_title
-               )
+  titlePanel(title = app_title
+            
   ),
   
   # # Prototype Warning.
