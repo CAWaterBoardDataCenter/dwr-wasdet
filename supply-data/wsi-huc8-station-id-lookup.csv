@@ -1,0 +1,10 @@
+huc8_name,source_file,source_table,station_id,start,stop
+Upper San Joaquin,SJWSI,San Joaquin River inflow to Millerton Lake Unimpaired Flow,MIL,31,37
+Upper Merced,SJWSI,Merced River below Merced Falls Unimpaired Flow,MMF,22,28
+Upper Tuolumne,SJWSI,Tuolumne River below La Grange Reservoir Unimpaired Flow,TLG,13,19
+Upper Stanislaus,SJWSI,Stanislaus River below Goodwin Reservoir Unimpaired Flow ,GDW,4,10
+Upper Yuba,SRWSI,Yuba River near Smartville plus Deer Creek Unimpaired Flow ,YRS,31,37
+,SRWSI,Shasta Lake Unimpaired Inflow,SIS,,
+,SRWSI,Sacramento River above Bend Bridge Unimpaired Flow ,SBB,,
+,SRWSI,Feather River at Oroville Unimpaired Flow,FTO,,
+,SRWSI,American River below Folsom Lake Unimpaired Flow ,,,
