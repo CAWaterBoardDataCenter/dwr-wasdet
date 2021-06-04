@@ -260,7 +260,7 @@ ui <- fluidPage( # Start fluidpage_1
                                                            # Plot column.
                                                            column(width = 7,
                                                                   tabsetPanel(id = "plot_tabs",
-                                                                              selected = "Demand by Water Right Type",
+                                                                              selected = "Supply-Demand Scenarios",
                                                                               type = "pills",
                                                                               
                                                                               ###### Demand by Water right type plot tab. ----
@@ -305,9 +305,9 @@ ui <- fluidPage( # Start fluidpage_1
                                                                     br(),
                                                                     
                                                                     ###### Debug notes. ----
-                                                                    #   h3("Debug"),
+                                                                       h3("Debug"),
                                                                     
-                                                                    #   textOutput("debug_text")
+                                                                       uiOutput("debug_text")
                                                                   )
                                                            )
                                                          )
@@ -385,10 +385,14 @@ ui <- fluidPage( # Start fluidpage_1
 
 server <- function(input, output, session) {
   
-  # Debug. ----
+  # ** DEBUG TEXT ** ----
   
-  output$debug_text <- renderText({ paste0("DEBUG: input$supply_filter is: ", 
-                                           input$supply_filter) })
+  output$debug_text <- renderUI(HTML(paste0("huc8_selected: ", 
+                                            input$huc8_selected, br(),
+                                            "d_scene_selected: ", 
+                                            input$d_scene_selected, br(),
+                                            "s_scene_selected: ",
+                                            input$s_scene_selected)))
   
   # Setup. ----
   
@@ -429,14 +433,14 @@ server <- function(input, output, session) {
   ## Filter for watersheds that have supply data. ----
   observeEvent(input$supply_filter, {
     if (input$supply_filter) { 
-      choices <- sort(names(demand)[names(demand) %in% names(supply)])
+      huc8_choices <- sort(names(demand)[names(demand) %in% names(supply)])
     } else { 
-      choices <- sort(names(demand))
+      huc8_choices <- sort(names(demand))
     }
     updateSelectInput(session,
                       inputId = "huc8_selected",
-                      choices = choices,
-                      selected = "Upper San Joaquin")
+                      choices = huc8_choices,
+                      selected = "Upper Dry")
   })
   
   ## Update demand scenario choices. ----
@@ -454,7 +458,7 @@ server <- function(input, output, session) {
     updateSelectizeInput(session, 
                          inputId = "s_scene_selected",
                          choices = choices,
-                         selected = NULL)
+                         selected = NA)
   })
   
   ## Update priority year choices. ----
