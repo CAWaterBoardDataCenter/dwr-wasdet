@@ -36,7 +36,7 @@ if (!("package:gridExtra" %in% search())) {
 
 show_rt_supply <- TRUE
 
-test_scenario <- 3
+test_scenario <- 1
 
 ## Selections. ----
 
@@ -176,38 +176,44 @@ plot_demand <- filter(demand[[huc8_selected]],
 
 # Conditionally build supply dataset. ----
 
-build_plot_supply <- function(x, s_scene_selected, d_scene_selected) {
-  x <- filter(x, s_scenario %in% s_scene_selected) %>%
-    mutate(source = "old",
-           fill_color = NA,
-           plot_group = "supply") %>%
-    full_join(.,
-              as_tibble(d_scene_selected),
-              by = character()) %>%
-    select(source,
-           d_scenario = value,
-           s_scenario,
-           plot_date,
-           fill_color,
-           af_monthly,
-           af_daily,
-           cfs,
-           plot_category)
-  
-  return(x)
+build_plot_supply <- function(x, s_scene, d_scene) {
+  if( !is.null(x) & !is.null(s_scene) ) {
+    y <- x %>% 
+      filter(s_scenario %in% s_scene) %>%
+      mutate(source = "old",
+             fill_color = NA,
+             plot_group = "supply") %>%
+      full_join(.,
+                as_tibble(d_scene),
+                by = character()) %>%
+      select(source,
+             d_scenario = value,
+             s_scenario,
+             plot_date,
+             fill_color,
+             af_monthly,
+             af_daily,
+             cfs,
+             plot_category)
+  } else {
+    y <- NULL
+  }
+  return(y)
 }
 
-# Why doesn't this work?
-# plot_supply <- ifelse((!is.null(supply[[huc8_selected]]) & !is.null(s_scene_selected)),
+plot_supply <- build_plot_supply(supply[[huc8_selected]], s_scene_selected, d_scene_selected)
+
+# # Why doesn't this work?
+# plot_supply <- ifelse((!is.null(supply[[huc8_selected]]) | !is.null(s_scene_selected)),
 #                       build_plot_supply(supply[[huc8_selected]], s_scene_selected, d_scene_selected),
 #                       NA)
 
-# But this does?
-if( !is.null(supply[[huc8_selected]]) & !is.null(s_scene_selected) ) {
-  plot_supply <- build_plot_supply(supply[[huc8_selected]], s_scene_selected, d_scene_selected)
-} else {
-  plot_supply <- NULL
-}
+# # But this does?
+# if( !is.null(supply[[huc8_selected]]) & !is.null(s_scene_selected) ) {
+#   plot_supply <- build_plot_supply(supply[[huc8_selected]], s_scene_selected, d_scene_selected)
+# } else {
+#   plot_supply <- NULL
+# }
 
 ## Bind demand and supply datasets. ----
 vsd_plot_data <- rbind(plot_demand, if(!is.null(plot_supply)) plot_supply)  
@@ -215,27 +221,27 @@ vsd_plot_data <- rbind(plot_demand, if(!is.null(plot_supply)) plot_supply)
 # Generate plot. ----
 
 # Render.
-ggplot(data = vsd_plot_data,
+g <- ggplot(data = vsd_plot_data,
        aes(x = plot_date,
-           y = cfs)) +
+           y = cfs))
   
   # Demand.
-  geom_area(data = subset(vsd_plot_data, plot_category == "demand"),
+  g <- g + geom_area(data = subset(vsd_plot_data, plot_category == "demand"),
             position = "stack",
-            aes(fill = fill_color)) +
+            aes(fill = fill_color))
   
   # Supply.
-  geom_point(data = subset(vsd_plot_data, plot_category == "supply"),
+  g <- g + geom_point(data = subset(vsd_plot_data, plot_category %in% c("supply", "forecast")),
              aes(color = s_scenario,
                  shape = s_scenario),
-             size = 7) +
-  geom_line(data = subset(vsd_plot_data, plot_category == "supply"),
+             size = 7)
+  g <- g + geom_line(data = subset(vsd_plot_data, plot_category %in% c("supply", "forecast")),
             aes(color = s_scenario),
-            linetype = "dashed") +
+            linetype = "dashed")
   
   # X axis format.
-  scale_x_date(date_labels = "%b %d",
-               date_minor_breaks = "1 month") +
+  g <- g + scale_x_date(date_labels = "%b %d",
+               date_minor_breaks = "1 month")
   
   # Y axis format.
   scale_y_continuous(labels = comma) +

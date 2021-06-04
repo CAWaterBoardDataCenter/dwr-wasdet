@@ -65,6 +65,34 @@ if (Sys.info()["nodename"] == "Home-iMac.local") {
 app_title <- paste("Division of Water Rights",
                    "Water Supply/Demand Visualization Tool")
 
+# Functions, ----
+
+## Build plot supply data frame.
+build_plot_supply <- function(x, s_scene, d_scene) {
+  if( !is.null(x) & !is.null(s_scene) ) {
+    y <- x %>% 
+      filter(s_scenario %in% s_scene) %>%
+      mutate(source = "old",
+             fill_color = NA,
+             plot_group = "supply") %>%
+      full_join(.,
+                as_tibble(d_scene),
+                by = character()) %>%
+      select(source,
+             d_scenario = value,
+             s_scenario,
+             plot_date,
+             fill_color,
+             af_monthly,
+             af_daily,
+             cfs,
+             plot_category)
+  } else {
+    y <- NULL
+  }
+  return(y)
+}
+
 # Load data from AWS S3 bucket. ----
 
 ## Load S3 keys. ----
@@ -156,7 +184,7 @@ ui <- fluidPage( # Start fluidpage_1
   
   ## Title bar. ----
   titlePanel(title = app_title
-            
+             
   ),
   
   # # Prototype Warning.
@@ -305,9 +333,9 @@ ui <- fluidPage( # Start fluidpage_1
                                                                     br(),
                                                                     
                                                                     ###### Debug notes. ----
-                                                                       h3("Debug"),
+                                                                    h3("Debug"),
                                                                     
-                                                                       uiOutput("debug_text")
+                                                                    uiOutput("debug_text")
                                                                   )
                                                            )
                                                          )
@@ -620,64 +648,51 @@ server <- function(input, output, session) {
   
   ## Supply-Demand Scenario plot (vsd). ----
   
-  ### Build dataset. ----
+  ### Build plot data frame. ----
   ## This is where the magic happens.
+  
+  #### Demand plot data. ----
+  
+  vsd_plot_demand <- reactive({
+    filter(demand[[input$huc8_selected]], 
+           d_scenario %in% input$d_scene_selected) %>%
+      mutate(fill_color = if_else(priority == "Statement Demand",
+                                  "Statement Demand",
+                                  if_else(priority == "Statement Demand",
+                                          "Statement Demand",
+                                          if_else(p_year >= input$priority_selected,
+                                                  "Junior Post-14", "Post-14"))),
+             fill_color = ordered(fill_color, levels = wa_demand_order)) %>%
+      group_by(d_scenario, plot_date, fill_color, plot_category) %>%
+      summarise(af_monthly = sum(af_monthly, na.rm = TRUE),
+                af_daily = sum(af_daily, na.rm = TRUE),
+                cfs = sum(cfs, na.rm = TRUE),
+                .groups = "drop") %>% 
+      mutate(s_scenario = NA) %>%
+      select(d_scenario, 
+             s_scenario, 
+             plot_date,
+             fill_color, 
+             af_monthly,
+             af_daily, 
+             cfs, 
+             plot_category) %>% 
+      # Add boundary points to facilitate barplot vis and correct stacking.
+      bind_rows(old = .,
+                new = mutate(., 
+                             plot_date = ceiling_date(x = plot_date,
+                                                      unit = "month") - 1),
+                .id = "source") %>% 
+      arrange(plot_date, source)
+  })
+  
+  vsd_plot_supply <- reactive({
+    build_plot_supply(supply[[input$huc8_selected]], 
+                      input$s_scene_selected, input$d_scene_selected)
+  })
+  
   vsd_plot_data <- reactive({
-    bind_rows(
-      {
-        # Demand.
-        filter(demand[[input$huc8_selected]], 
-               d_scenario %in% input$d_scene_selected) %>%
-          mutate(fill_color = if_else(priority == "Statement Demand",
-                                      "Statement Demand",
-                                      if_else(priority == "Statement Demand",
-                                              "Statement Demand",
-                                              if_else(p_year >= input$priority_selected,
-                                                      "Junior Post-14", "Post-14"))),
-                 fill_color = ordered(fill_color, levels = wa_demand_order)) %>%
-          group_by(d_scenario, plot_date, fill_color, plot_category) %>%
-          summarise(af_monthly = sum(af_monthly, na.rm = TRUE),
-                    af_daily = sum(af_daily, na.rm = TRUE),
-                    cfs = sum(cfs, na.rm = TRUE),
-                    .groups = "drop") %>% 
-          mutate(s_scenario = NA) %>%
-          select(d_scenario, 
-                 s_scenario, 
-                 plot_date,
-                 fill_color, 
-                 af_monthly,
-                 af_daily, 
-                 cfs, 
-                 plot_category) %>% 
-          # Add boundary points to facilitate barplot vis and correct stacking.
-          bind_rows(old = .,
-                    new = mutate(., 
-                                 plot_date = ceiling_date(x = plot_date,
-                                                          unit = "month") - 1),
-                    .id = "source") %>% 
-          arrange(plot_date, source)
-      }, 
-      {
-        # Supply.
-        filter(supply[[input$huc8_selected]],
-               s_scenario %in% input$s_scene_selected) %>%
-          mutate(source = "old",
-                 fill_color = NA,
-                 plot_category = "supply") %>%
-          full_join(.,
-                    as_tibble(input$d_scene_selected),
-                    by = character()) %>%
-          select(source,
-                 d_scenario = value,
-                 s_scenario,
-                 plot_date,
-                 fill_color,
-                 af_monthly,
-                 af_daily,
-                 cfs,
-                 plot_category)
-      }
-    )
+    rbind(vsd_plot_demand(), if(!is.null(vsd_plot_supply())) vsd_plot_supply())
   })
   
   ### Render plot. ----
@@ -700,11 +715,11 @@ server <- function(input, output, session) {
                 aes(fill = fill_color)) +
       
       # Supply.
-      geom_point(data = subset(vsd_plot_data(), plot_category == "supply"),
+      geom_point(data = subset(vsd_plot_data(), plot_category %in% c("supply", "forecast")),
                  aes(color = s_scenario,
                      shape = s_scenario),
                  size = 7) +
-      geom_line(data = subset(vsd_plot_data(), plot_category == "supply"),
+      geom_line(data = subset(vsd_plot_data(), plot_category %in% c("supply", "forecast")),
                 aes(color = s_scenario),
                 linetype = "dashed") +
       
