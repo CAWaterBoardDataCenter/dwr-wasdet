@@ -36,7 +36,7 @@ if (!("package:gridExtra" %in% search())) {
 
 show_rt_supply <- TRUE
 
-test_scenario <- 1
+test_scenario <- 3
 
 ## Selections. ----
 
@@ -50,15 +50,15 @@ if( test_scenario == 1 ) {
   
   # 2. DF exists in supply for huc8_selected, s_scene_selected is NULL
   if( test_scenario == 2 ) {
-  huc8_selected <- "Upper San Joaquin"
-  s_scene_selected <- NULL
-} else 
-  
-  # 3. DF does not exist  in supply for huc8_selected.
-  if( test_scenario == 3 ) {
-  huc8_selected <- "Upper Pit"
-  s_scene_selected <- NULL
-}
+    huc8_selected <- "Upper San Joaquin"
+    s_scene_selected <- NULL
+  } else 
+    
+    # 3. DF does not exist  in supply for huc8_selected.
+    if( test_scenario == 3 ) {
+      huc8_selected <- "Upper Pit"
+      s_scene_selected <- NULL
+    }
 
 
 # # HUC-8 watershed.
@@ -174,10 +174,10 @@ plot_demand <- filter(demand[[huc8_selected]],
             .id = "source") %>% 
   arrange(plot_date, source)
 
-## Conditionally build supply dataset. ----
+# Conditionally build supply dataset. ----
 
 build_plot_supply <- function(x, s_scene_selected, d_scene_selected) {
-  y <- filter(x, s_scenario %in% s_scene_selected) %>%
+  x <- filter(x, s_scenario %in% s_scene_selected) %>%
     mutate(source = "old",
            fill_color = NA,
            plot_group = "supply") %>%
@@ -194,43 +194,23 @@ build_plot_supply <- function(x, s_scene_selected, d_scene_selected) {
            cfs,
            plot_category)
   
-  return(y)
+  return(x)
 }
 
-plot_supply <- ifelse((!is.null(supply[[huc8_selected]]) & !is.null(s_scene_selected)),
-                      build_plot_supply(supply[[huc8_selected]], s_scene_selected, d_scene_selected),
-                      NA)
+# Why doesn't this work?
+# plot_supply <- ifelse((!is.null(supply[[huc8_selected]]) & !is.null(s_scene_selected)),
+#                       build_plot_supply(supply[[huc8_selected]], s_scene_selected, d_scene_selected),
+#                       NA)
 
+# But this does?
 if( !is.null(supply[[huc8_selected]]) & !is.null(s_scene_selected) ) {
   plot_supply <- build_plot_supply(supply[[huc8_selected]], s_scene_selected, d_scene_selected)
 } else {
-  plot_supply <- NA
+  plot_supply <- NULL
 }
-# # if( !is.null(supply[[huc8_selected]]) ) {
-#   plot_supply <- filter(supply[[huc8_selected]],
-#                         s_scenario %in% s_scene_selected) %>%
-#     mutate(source = "old",
-#            fill_color = NA,
-#            plot_group = "supply") %>%
-#     full_join(.,
-#               as_tibble(d_scene_selected),
-#               by = character()) %>%
-#     select(source,
-#            d_scenario = value,
-#            s_scenario,
-#            plot_date,
-#            fill_color,
-#            af_monthly,
-#            af_daily,
-#            cfs,
-#            plot_category)
-# # } else {
-# #   plot_supply = -9999
-# # }
-#   
-# ## Bind datasets. ----
-# vsd_plot_data <- bind_rows(plot_demand, plot_supply)
-vsd_plot_data <- rbind(plot_demand, if(!is.na(plot_supply)) plot_supply)  
+
+## Bind demand and supply datasets. ----
+vsd_plot_data <- rbind(plot_demand, if(!is.null(plot_supply)) plot_supply)  
 
 # Generate plot. ----
 
@@ -286,140 +266,6 @@ ggplot(data = vsd_plot_data,
   # Theme.
   theme_minimal() +
   sd_plot_theme
-
-
-
-
-
-
-
-
-# vsd_plot_data <- bind_rows(
-#   
-#   # Demand.
-#   { filter(demand[[huc8_selected]], 
-#            d_scenario %in% d_scene_selected) %>%
-#       mutate(fill_color = if_else(priority == "Statement Demand",
-#                                   "Statement Demand",
-#                                   if_else(priority == "Statement Demand",
-#                                           "Statement Demand",
-#                                           if_else(p_year >= priority_selected,
-#                                                   "Junior Post-14", "Post-14"))),
-#              fill_color = ordered(fill_color, levels = wa_demand_order)) %>%
-#       group_by(d_scenario, plot_date, fill_color) %>%
-#       summarise(af_monthly = sum(af_monthly, na.rm = TRUE),
-#                 af_daily = sum(af_daily, na.rm = TRUE),
-#                 cfs = sum(cfs, na.rm = TRUE),
-#                 .groups = "drop") %>% 
-#       mutate(plot_group = "demand",
-#              s_scenario = NA) %>%
-#       select(d_scenario, 
-#              s_scenario, 
-#              plot_date,
-#              fill_color, 
-#              af_monthly,
-#              af_daily, 
-#              cfs, 
-#              plot_group) %>% 
-#       # Add boundary points to facilitate barplot vis and correct stacking.
-#       bind_rows(old = .,
-#                 new = mutate(., 
-#                              plot_date = ceiling_date(x = plot_date,
-#                                                       unit = "month") - 1),
-#                 .id = "source") %>% 
-#       arrange(plot_date, source)
-#   },
-#   
-#   # Supply.
-#   { filter(supply, huc8_name %in% huc8_selected,
-#            s_scenario %in% s_scene_selected) %>%
-#       mutate(source = "old",
-#              fill_color = NA,
-#              plot_group = "supply") %>%
-#       full_join(.,
-#                 as_tibble(d_scene_selected),
-#                 by = character()) %>%
-#       select(source,
-#              d_scenario = value,
-#              s_scenario,
-#              plot_date,
-#              fill_color,
-#              af_monthly,
-#              af_daily,
-#              cfs,
-#              plot_group)
-#   }
-# )
-
-
-
-#   
-#   #ifelse( is.null(supply[[huc8_selected]]),
-# #                        -9999,
-# #                        1000)
-#                        {filter(supply[[huc8_selected]],
-#                               s_scenario %in% s_scene_selected) %>%
-#                          mutate(source = "old",
-#                                 fill_color = NA,
-#                                 plot_group = "supply") %>%
-#                          full_join(.,
-#                                    as_tibble(d_scene_selected),
-#                                    by = character()) %>%
-#                          select(source,
-#                                 d_scenario = value,
-#                                 s_scenario,
-#                                 plot_date,
-#                                 fill_color,
-#                                 af_monthly,
-#                                 af_daily,
-#                                 cfs,
-#                                 plot_category)}
-# #                       )
-# #   NA
-# # } else {
-# #   filter(supply[[huc8_selected]],
-#          s_scenario %in% s_scene_selected) %>%
-#     mutate(source = "old",
-#            fill_color = NA,
-#            plot_group = "supply") %>%
-#     full_join(.,
-#               as_tibble(d_scene_selected),
-#               by = character()) %>%
-#     select(source,
-#            d_scenario = value,
-#            s_scenario,
-#            plot_date,
-#            fill_color,
-#            af_monthly,
-#            af_daily,
-#            cfs,
-#            plot_category)
-# }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
