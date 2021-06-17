@@ -86,6 +86,7 @@ build_plot_supply <- function(x, s_scene, d_scene) {
              af_monthly,
              af_daily,
              cfs,
+             plot_group,
              plot_category)
   } else {
     y <- NULL
@@ -440,22 +441,46 @@ server <- function(input, output, session) {
   # OBSERVERS. ----
   
   ## Control input selectors. ----
+  # observe({
+  #   if (input$plot_tabs == "Supply-Demand Scenarios") {
+  #     showElement(id = "s_scene_selected")
+  #     showElement(id = "priority_selected")
+  #     hideElement(id = "wrt_selected")
+  #   } else
+  #     if (input$plot_tabs == "Demand by Water Right Type") {
+  #       hideElement(id = "s_scene_selected")
+  #       hideElement(id = "priority_selected")
+  #       showElement(id = "wrt_selected")
+  #     } else
+  #       if (input$plot_tabs == "Demand by Priority") {
+  #         hideElement(id = "s_scene_selected")
+  #         hideElement(id = "priority_selected")
+  #         showElement(id = "wrt_selected")
+  #       }
+  # })
   observe({
-    if (input$plot_tabs == "Supply-Demand Scenarios") {
+    if (input$plot_tabs == "Demand by Water Right Type") {
+      hideElement(id = "s_scene_selected")
+      hideElement(id = "priority_selected")
+      showElement(id = "wrt_selected")
+    }
+    if (input$plot_tabs == "Demand by Priority") {
+      hideElement(id = "s_scene_selected")
+      hideElement(id = "priority_selected")
+      showElement(id = "wrt_selected")
+    }
+    if (input$plot_tabs == "Supply-Demand Scenarios" & 
+        is.null(supply[[input$huc8_selected]])) {
+      hideElement(id = "s_scene_selected")
+      showElement(id = "priority_selected")
+      hideElement(id = "wrt_selected")
+    }
+    if (input$plot_tabs == "Supply-Demand Scenarios" & 
+        !is.null(supply[[input$huc8_selected]])) {
       showElement(id = "s_scene_selected")
       showElement(id = "priority_selected")
       hideElement(id = "wrt_selected")
-    } else
-      if (input$plot_tabs == "Demand by Water Right Type") {
-        hideElement(id = "s_scene_selected")
-        hideElement(id = "priority_selected")
-        showElement(id = "wrt_selected")
-      } else
-        if (input$plot_tabs == "Demand by Priority") {
-          hideElement(id = "s_scene_selected")
-          hideElement(id = "priority_selected")
-          showElement(id = "wrt_selected")
-        }
+    }
   })
   
   ## Filter for watersheds that have supply data. ----
@@ -482,23 +507,33 @@ server <- function(input, output, session) {
   
   ## Update supply scenario choices. ----
   observeEvent(input$huc8_selected, {
-    choices <- sort(unique(supply[[input$huc8_selected]]$s_scenario))
-    updateSelectizeInput(session, 
+    supply_choices <- sort(unique(supply[[input$huc8_selected]]$s_scenario))
+    updateSelectizeInput(session,
                          inputId = "s_scene_selected",
-                         choices = choices,
-                         selected = NA)
+                         choices = supply_choices,
+                         selected = NULL)
   })
+  
+  # ## Update supply scenario choices. ---- TEST
+  # observeEvent(input$huc8_selected, {
+  #   supply_choices <- ifelse(is.null(supply[[input$huc8_selected]]), 
+  #                            NULL,
+  #                            sort(unique(supply[[input$huc8_selected]]$s_scenario)))
+  #   updateSelectizeInput(session, 
+  #                        inputId = "s_scene_selected",
+  #                        choices = supply_choices,
+  #                        selected = NULL)
+  # })
   
   ## Update priority year choices. ----
   py_choice_list <- reactive({
     sort(na.omit(unique(demand[[input$huc8_selected]]$p_year)), decreasing = TRUE)
   })
-  observeEvent(input$d_scene_selected, {
+  observeEvent(input$huc8_selected, {
     choices <- py_choice_list()[py_choice_list() > min(py_choice_list())]
     updateSelectInput(session, "priority_selected",
                       choices = choices,
-                      # selected = max(choices),
-                      selected = 1975) # sample(choices, 1))
+                      selected = nth(choices, length(choices) / 2))
   })
   
   ## Update water right type choices. ----
@@ -652,7 +687,6 @@ server <- function(input, output, session) {
   ## This is where the magic happens.
   
   #### Demand plot data. ----
-  
   vsd_plot_demand <- reactive({
     filter(demand[[input$huc8_selected]], 
            d_scenario %in% input$d_scene_selected) %>%
@@ -668,7 +702,8 @@ server <- function(input, output, session) {
                 af_daily = sum(af_daily, na.rm = TRUE),
                 cfs = sum(cfs, na.rm = TRUE),
                 .groups = "drop") %>% 
-      mutate(s_scenario = NA) %>%
+      mutate(plot_group = "demand",
+             s_scenario = NA) %>%
       select(d_scenario, 
              s_scenario, 
              plot_date,
@@ -676,6 +711,7 @@ server <- function(input, output, session) {
              af_monthly,
              af_daily, 
              cfs, 
+             plot_group,
              plot_category) %>% 
       # Add boundary points to facilitate barplot vis and correct stacking.
       bind_rows(old = .,
@@ -686,6 +722,7 @@ server <- function(input, output, session) {
       arrange(plot_date, source)
   })
   
+  #### Supply plot data. ----
   vsd_plot_supply <- reactive({
     build_plot_supply(supply[[input$huc8_selected]], 
                       input$s_scene_selected, input$d_scene_selected)
@@ -710,16 +747,16 @@ server <- function(input, output, session) {
                y = cfs)) +
       
       # Demand.
-      geom_area(data = subset(vsd_plot_data(), plot_category == "demand"),
+      geom_area(data = subset(vsd_plot_data(), plot_group == "demand"),
                 position = "stack",
                 aes(fill = fill_color)) +
       
       # Supply.
-      geom_point(data = subset(vsd_plot_data(), plot_category %in% c("supply", "forecast")),
+      geom_point(data = subset(vsd_plot_data(), plot_group == "supply"),
                  aes(color = s_scenario,
                      shape = s_scenario),
                  size = 7) +
-      geom_line(data = subset(vsd_plot_data(), plot_category %in% c("supply", "forecast")),
+      geom_line(data = subset(vsd_plot_data(), plot_group == "supply"),
                 aes(color = s_scenario),
                 linetype = "dashed") +
       

@@ -127,18 +127,6 @@ cy_supply_pal <- "blue"
 #-------------------------------------------------------------------------------
 
 
-# Plot theme.
-sd_plot_theme <-  theme(
-  legend.box = "vertical",
-  legend.direction = "horizontal",
-  # strip.text.x = element_text(size = rel(1.5)),
-  # axis.title = element_text(size = rel(1.2)),
-  # axis.text = element_text(size = rel(1.2)),
-  # legend.text = element_text(size = rel(1.2)),
-  # legend.title = element_text(size = rel(1.2)),
-  axis.title.x = element_blank()
-)
-
 # Build dataset for plot based on selections. ----
 
 ## Build demand dataset. ----
@@ -157,7 +145,8 @@ plot_demand <- filter(demand[[huc8_selected]],
             af_daily = sum(af_daily, na.rm = TRUE),
             cfs = sum(cfs, na.rm = TRUE),
             .groups = "drop") %>% 
-  mutate(s_scenario = NA) %>%
+  mutate(plot_group = "demand",
+         s_scenario = NA) %>%
   select(d_scenario, 
          s_scenario, 
          plot_date,
@@ -165,6 +154,7 @@ plot_demand <- filter(demand[[huc8_selected]],
          af_monthly,
          af_daily, 
          cfs, 
+         plot_group,
          plot_category) %>% 
   # Add boundary points to facilitate barplot vis and correct stacking.
   bind_rows(old = .,
@@ -175,6 +165,11 @@ plot_demand <- filter(demand[[huc8_selected]],
   arrange(plot_date, source)
 
 # Conditionally build supply dataset. ----
+
+# x <- supply[[huc8_selected]]
+# s_scene <- s_scene_selected
+# d_scene <- d_scene_selected
+
 
 build_plot_supply <- function(x, s_scene, d_scene) {
   if( !is.null(x) & !is.null(s_scene) ) {
@@ -194,6 +189,7 @@ build_plot_supply <- function(x, s_scene, d_scene) {
              af_monthly,
              af_daily,
              cfs,
+             plot_group,
              plot_category)
   } else {
     y <- NULL
@@ -222,29 +218,29 @@ vsd_plot_data <- rbind(plot_demand, if(!is.null(plot_supply)) plot_supply)
 
 # Render.
 g <- ggplot(data = vsd_plot_data,
-       aes(x = plot_date,
-           y = cfs))
-  
-  # Demand.
-  g <- g + geom_area(data = subset(vsd_plot_data, plot_category == "demand"),
-            position = "stack",
-            aes(fill = fill_color))
-  
-  # Supply.
-  g <- g + geom_point(data = subset(vsd_plot_data, plot_category %in% c("supply", "forecast")),
-             aes(color = s_scenario,
-                 shape = s_scenario),
-             size = 7)
-  g <- g + geom_line(data = subset(vsd_plot_data, plot_category %in% c("supply", "forecast")),
-            aes(color = s_scenario),
-            linetype = "dashed")
-  
-  # X axis format.
-  g <- g + scale_x_date(date_labels = "%b %d",
-               date_minor_breaks = "1 month")
-  
-  # Y axis format.
-  scale_y_continuous(labels = comma) +
+            aes(x = plot_date,
+                y = cfs)) +
+
+# Demand.
+geom_area(data = subset(vsd_plot_data, plot_group == "demand"),
+                   position = "stack",
+                   aes(fill = fill_color)) +
+
+# Supply.
+geom_point(data = subset(vsd_plot_data, plot_group == "supply"),
+                    aes(color = s_scenario,
+                        shape = s_scenario),
+                    size = 7) +
+geom_line(data = subset(vsd_plot_data, plot_group == "supply"),
+                   aes(color = s_scenario),
+                   linetype = "dashed") +
+
+# X axis format.
+scale_x_date(date_labels = "%b %d",
+                      date_minor_breaks = "1 month") +
+
+# Y axis format.
+scale_y_continuous(labels = comma) +
   
   # Demand legend.
   scale_fill_manual(name = "Demand Priority:",
@@ -271,7 +267,17 @@ g <- ggplot(data = vsd_plot_data,
   
   # Theme.
   theme_minimal() +
-  sd_plot_theme
+  theme(
+ #   legend.box = "vertical",
+    legend.position = "bottom",
+    legend.direction = "vertical",
+    # strip.text.x = element_text(size = rel(1.5)),
+    # axis.title = element_text(size = rel(1.2)),
+    # axis.text = element_text(size = rel(1.2)),
+    # legend.text = element_text(size = rel(1.2)),
+    # legend.title = element_text(size = rel(1.2)),
+    axis.title.x = element_blank()
+  )
 
 
 
