@@ -159,11 +159,6 @@ cy_supply_pal <- "blue"
 vsd_plot_theme <-  theme(
   legend.box = "vertical",
   legend.direction = "horizontal",
-  # strip.text.x = element_text(size = rel(1.5)),
-  # axis.title = element_text(size = rel(1.2)),
-  # axis.text = element_text(size = rel(1.2)),
-  # legend.text = element_text(size = rel(1.2)),
-  # legend.title = element_text(size = rel(1.2)),
   axis.title.x = element_blank()
 )
 
@@ -187,11 +182,6 @@ ui <- fluidPage( # Start fluidpage_1
   titlePanel(title = app_title
              
   ),
-  
-  # # Prototype Warning.
-  # p(paste("Under Development. Do not rely on data used in this dashboard",
-  #          "until it is officially released."), 
-  #    style = "color:red"),
   
   ## Main Tabs. ----
   navbarPage(title = NULL,
@@ -246,6 +236,9 @@ ui <- fluidPage( # Start fluidpage_1
                                        ##### Conditional Inputs. ----
                                        
                                        wellPanel(
+                                         
+                                         ###### Conditional supply availability text. ----
+                                         htmlOutput(outputId = "no_supply_text"),
                                          
                                          ###### Select supply scenario(s) for vsd_plot. ----
                                          selectizeInput(inputId = "s_scene_selected",
@@ -441,42 +434,29 @@ server <- function(input, output, session) {
   # OBSERVERS. ----
   
   ## Control input selectors. ----
-  # observe({
-  #   if (input$plot_tabs == "Supply-Demand Scenarios") {
-  #     showElement(id = "s_scene_selected")
-  #     showElement(id = "priority_selected")
-  #     hideElement(id = "wrt_selected")
-  #   } else
-  #     if (input$plot_tabs == "Demand by Water Right Type") {
-  #       hideElement(id = "s_scene_selected")
-  #       hideElement(id = "priority_selected")
-  #       showElement(id = "wrt_selected")
-  #     } else
-  #       if (input$plot_tabs == "Demand by Priority") {
-  #         hideElement(id = "s_scene_selected")
-  #         hideElement(id = "priority_selected")
-  #         showElement(id = "wrt_selected")
-  #       }
-  # })
   observe({
     if (input$plot_tabs == "Demand by Water Right Type") {
+      hideElement(id = "no_supply_text")
       hideElement(id = "s_scene_selected")
       hideElement(id = "priority_selected")
       showElement(id = "wrt_selected")
     }
     if (input$plot_tabs == "Demand by Priority") {
+      hideElement(id = "no_supply_text")
       hideElement(id = "s_scene_selected")
       hideElement(id = "priority_selected")
       showElement(id = "wrt_selected")
     }
     if (input$plot_tabs == "Supply-Demand Scenarios" & 
         is.null(supply[[input$huc8_selected]])) {
+      showElement(id = "no_supply_text")
       hideElement(id = "s_scene_selected")
       showElement(id = "priority_selected")
       hideElement(id = "wrt_selected")
     }
     if (input$plot_tabs == "Supply-Demand Scenarios" & 
         !is.null(supply[[input$huc8_selected]])) {
+      hideElement(id = "no_supply_text")
       showElement(id = "s_scene_selected")
       showElement(id = "priority_selected")
       hideElement(id = "wrt_selected")
@@ -514,17 +494,6 @@ server <- function(input, output, session) {
                          selected = NULL)
   })
   
-  # ## Update supply scenario choices. ---- TEST
-  # observeEvent(input$huc8_selected, {
-  #   supply_choices <- ifelse(is.null(supply[[input$huc8_selected]]), 
-  #                            NULL,
-  #                            sort(unique(supply[[input$huc8_selected]]$s_scenario)))
-  #   updateSelectizeInput(session, 
-  #                        inputId = "s_scene_selected",
-  #                        choices = supply_choices,
-  #                        selected = NULL)
-  # })
-  
   ## Update priority year choices. ----
   py_choice_list <- reactive({
     sort(na.omit(unique(demand[[input$huc8_selected]]$p_year)), decreasing = TRUE)
@@ -546,6 +515,13 @@ server <- function(input, output, session) {
   })
   
   # OUTPUTS. ----
+  
+  ## Input sidebar. ----
+  output$no_supply_text <- renderText({ 
+    paste0('<font color=\"#FF0000\"><p><b>',
+           'Supply Data Not Available for This Watershed.',
+           '</b><p></font>') 
+  })
   
   ## Demand By Water Right Type Plot (dbwrt). ----
   
@@ -979,48 +955,3 @@ server <- function(input, output, session) {
 
 shinyApp(ui = ui,
          server = server)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
