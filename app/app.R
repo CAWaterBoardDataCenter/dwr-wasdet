@@ -31,6 +31,9 @@ if (!("package:sf" %in% search())) {
 if (!("package:wesanderson" %in% search())) {
   suppressMessages(library(wesanderson))
 }
+if (!("package:tidyr" %in% search())) {
+  suppressMessages(library(tidyr))
+}
 if (!("package:dplyr" %in% search())) {
   suppressMessages(library(dplyr))
 }
@@ -69,28 +72,24 @@ app_title <- paste("Division of Water Rights",
 
 ## Build plot supply data frame.
 build_plot_supply <- function(x, s_scene, d_scene) {
-  if( !is.null(x) & !is.null(s_scene) ) {
-    y <- x %>% 
-      filter(s_scenario %in% s_scene) %>%
-      mutate(source = "old",
-             fill_color = NA,
-             plot_group = "supply") %>%
-      full_join(.,
-                as_tibble(d_scene),
-                by = character()) %>%
-      select(source,
-             d_scenario = value,
-             s_scenario,
-             plot_date,
-             fill_color,
-             af_monthly,
-             af_daily,
-             cfs,
-             plot_group,
-             plot_category)
-  } else {
-    y <- NULL
-  }
+  y <- x %>% 
+    filter(s_scenario %in% s_scene) %>%
+    mutate(source = "old",
+           fill_color = NA,
+           plot_group = "supply") %>%
+    full_join(.,
+              as_tibble(d_scene),
+              by = character()) %>%
+    select(source,
+           d_scenario = value,
+           s_scenario,
+           plot_date,
+           fill_color,
+           af_monthly,
+           af_daily,
+           cfs,
+           plot_group,
+           plot_category)
   return(y)
 }
 
@@ -235,33 +234,33 @@ ui <- fluidPage( # Start fluidpage_1
                                        
                                        ##### Conditional Inputs. ----
                                        
-                                       wellPanel(
-                                         
-                                         ###### Conditional supply availability text. ----
-                                         htmlOutput(outputId = "no_supply_text"),
-                                         
-                                         ###### Select supply scenario(s) for vsd_plot. ----
-                                         selectizeInput(inputId = "s_scene_selected",
-                                                        label = "Select Up To Three Supply Scenarios:",
-                                                        choices = NULL,
-                                                        selected = NULL,
-                                                        multiple = TRUE,
-                                                        options = list(maxItems = 3)
-                                         ),
-                                         
-                                         ###### Select priority year to slice for vsd_plot. ----
-                                         selectInput(inputId = "priority_selected",
-                                                     label = "Select Demand Priority Year:",
-                                                     choices = NULL,
-                                                     selected = NULL,
-                                                     multiple = FALSE),
-                                         
-                                         ###### Select water right types to include in dbwrt_plot. ----
-                                         checkboxGroupInput(inputId = "wrt_selected",
-                                                            label = "Select Water Right Type(s) to Display:",
-                                                            choices = NULL,
-                                                            selected = NULL)
+                                       #                                      wellPanel(
+                                       
+                                       ###### Conditional supply availability text. ----
+                                       htmlOutput(outputId = "no_supply_text"),
+                                       
+                                       ###### Select supply scenario(s) for vsd_plot. ----
+                                       selectizeInput(inputId = "s_scene_selected",
+                                                      label = "Select Up To Three Supply Scenarios:",
+                                                      choices = NULL,
+                                                      selected = NULL,
+                                                      multiple = TRUE,
+                                                      options = list(maxItems = 3)
                                        ),
+                                       
+                                       ###### Select priority year to slice for vsd_plot. ----
+                                       selectInput(inputId = "priority_selected",
+                                                   label = "Select Demand Priority Year:",
+                                                   choices = NULL,
+                                                   selected = NULL,
+                                                   multiple = FALSE),
+                                       
+                                       ###### Select water right types to include in dbwrt_plot. ----
+                                       checkboxGroupInput(inputId = "wrt_selected",
+                                                          label = "Select Water Right Type(s) to Display:",
+                                                          choices = NULL,
+                                                          selected = NULL),
+                                       #                                      ),
                                        
                                        ##### Copyright. ----
                                        HTML('<center><img src="waterboards_logo_high_res.jpg", height = "70px"><img src="DWR-ENF-Logo-2048.png", height = "70px"></center>'),
@@ -282,7 +281,7 @@ ui <- fluidPage( # Start fluidpage_1
                                                            # Plot column.
                                                            column(width = 7,
                                                                   tabsetPanel(id = "plot_tabs",
-                                                                              selected = "Supply-Demand Scenarios",
+                                                                              selected = "Demand by Water Right Type",
                                                                               type = "pills",
                                                                               
                                                                               ###### Demand by Water right type plot tab. ----
@@ -324,11 +323,10 @@ ui <- fluidPage( # Start fluidpage_1
                                                                     leafletOutput(outputId = "mini_map",
                                                                                   height = "500px",
                                                                                   width = "95%"),
-                                                                    br(),
+                                                                    br() ,
                                                                     
                                                                     ###### Debug notes. ----
                                                                     h3("Debug"),
-                                                                    
                                                                     uiOutput("debug_text")
                                                                   )
                                                            )
@@ -420,8 +418,7 @@ server <- function(input, output, session) {
   
   # Disable units selector until implemented
   disable(id = "units_selected")
-  #  disable(id = "supply_filter")
-  
+
   # Helper Functions. ----
   
   # Define plot height function to keep facet panels roughly the same height
@@ -445,7 +442,7 @@ server <- function(input, output, session) {
       hideElement(id = "no_supply_text")
       hideElement(id = "s_scene_selected")
       hideElement(id = "priority_selected")
-      showElement(id = "wrt_selected")
+      hideElement(id = "wrt_selected")
     }
     if (input$plot_tabs == "Supply-Demand Scenarios" & 
         is.null(supply[[input$huc8_selected]])) {
@@ -523,7 +520,7 @@ server <- function(input, output, session) {
            '</b><p></font>') 
   })
   
-  ## Demand By Water Right Type Plot (dbwrt). ----
+  ## DBWRT - Demand By Water Right Type Plot (dbwrt). ----
   
   ### Build dataset. ----
   # Demand by water right type dataset.
@@ -587,7 +584,7 @@ server <- function(input, output, session) {
         axis.text = element_text(size = rel(1.2)),
         legend.text = element_text(size = rel(1.2)),
         legend.title = element_text(size = rel(1.2)),
-        legend.position = "bottom",
+        legend.justification = "top",
         legend.box = "horizontal",
         legend.direction = "vertical",
         axis.title.x = element_blank())
@@ -595,15 +592,22 @@ server <- function(input, output, session) {
   }, height = function() plot_height()
   )
   
-  ## Demand by Priority plot (dbp). ----
+  ## DBP - Demand by Priority plot. ----
+  
+  ### Build legend. ----
+  
+  # Demand by Priority legend.
+  priority_plot_pal <- reactive({
+    
+  })
   
   ### Build dataset. ----
   
   # Demand by priority dataset.
   dbp_plot_data <- reactive({
     demand[[input$huc8_selected]] %>% 
-      filter(d_scenario %in% input$d_scene_selected,
-             wr_type %in% input$wrt_selected) %>% 
+      filter(d_scenario %in% input$d_scene_selected) %>% #,
+      #       wr_type %in% input$wrt_selected) %>% 
       group_by(d_scenario, 
                priority, 
                plot_month = month(plot_date, label = TRUE)) %>%
@@ -631,8 +635,10 @@ server <- function(input, output, session) {
       
       # Legend.
       scale_fill_manual(name = "Priority:",
-                        values = priority_pal) +
-      guides(fill = guide_legend(ncol = 3)) +
+                        values = priority_pal,
+                        limits = sort(unique(dbp_plot_data()$priority))) +
+  #    guides(fill = guide_legend(ncol = 2)) +
+      
       
       # labels
       labs(title = "Monthly Demand by Priority",
@@ -652,12 +658,15 @@ server <- function(input, output, session) {
         axis.text = element_text(size = rel(1.2)),
         legend.text = element_text(size = rel(1.2)),
         legend.title = element_text(size = rel(1.2)),
+        legend.justification = "top",
+        legend.box = "horizontal",
+        legend.direction = "vertical",
         axis.title.x = element_blank())
     
   }, height = function() plot_height()
   )
   
-  ## Supply-Demand Scenario plot (vsd). ----
+  ## VSD - Supply-Demand Scenario plot. ----
   
   ### Build plot data frame. ----
   ## This is where the magic happens.
@@ -699,13 +708,35 @@ server <- function(input, output, session) {
   })
   
   #### Supply plot data. ----
+  # vsd_plot_supply <- reactive({
+  #   build_plot_supply(supply[[input$huc8_selected]], 
+  #                     input$s_scene_selected, input$d_scene_selected)
+  # })
   vsd_plot_supply <- reactive({
-    build_plot_supply(supply[[input$huc8_selected]], 
-                      input$s_scene_selected, input$d_scene_selected)
+    if( !is.null(input$s_scene_selected)) {
+      build_plot_supply(supply[[input$huc8_selected]], 
+                        input$s_scene_selected, 
+                        input$d_scene_selected)
+    } else {
+      NA
+    }
   })
   
+  #### Combine plot data. ----
+  # vsd_plot_data <- reactive({
+  #   # ifelse(!is.null(vsd_plot_supply()),
+  #   #        rbind(vsd_plot_demand(), vsd_plot_supply()),
+  #   #        vsd_plot_demand())
+  #   
+  #  rbind(vsd_plot_demand(), if(!is.data.frame(vsd_plot_supply())) vsd_plot_supply())
+  #   # filter(rbind(vsd_plot_demand(), if(!is.null(vsd_plot_supply())) vsd_plot_supply()),
+  #   #        !is.na())
+  # })
   vsd_plot_data <- reactive({
-    rbind(vsd_plot_demand(), if(!is.null(vsd_plot_supply())) vsd_plot_supply())
+    rbind(vsd_plot_demand(), 
+  #         if(is.data.frame(vsd_plot_supply()) & mean(names(vsd_plot_supply()) == names(vsd_plot_demand())) == 1) vsd_plot_supply())
+  if(is.data.frame(vsd_plot_supply())) vsd_plot_supply())
+    
   })
   
   ### Render plot. ----
@@ -773,9 +804,9 @@ server <- function(input, output, session) {
         strip.text.x = element_text(size = rel(2.0)),
         axis.title = element_text(size = rel(1.2)),
         axis.text = element_text(size = rel(1.2)),
+        legend.position = "bottom",
         legend.text = element_text(size = rel(1.2)),
         legend.title = element_text(size = rel(1.2)),
-        legend.position = "bottom",
         legend.box = "horizontal",
         legend.direction = "vertical",
         panel.spacing = unit(2, "lines"),
