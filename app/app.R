@@ -281,7 +281,7 @@ ui <- fluidPage( # Start fluidpage_1
                                                            # Plot column.
                                                            column(width = 7,
                                                                   tabsetPanel(id = "plot_tabs",
-                                                                              selected = "Supply-Demand Scenarios",
+                                                                              selected = "Demand by Water Right Type",
                                                                               type = "pills",
                                                                               
                                                                               ###### Demand by Water right type plot tab. ----
