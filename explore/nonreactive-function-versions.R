@@ -13,7 +13,7 @@ priority_selected <- 1964
 # s_scene_selected <- NULL
 # priority_selected <- 1948
 
-# DBP - Demand by Priority ----
+# DBP - Demand by Priority -----------------------------------------------------
 
 ## Demand by priority dataset. ----
 dbp_plot_data <- demand[[huc8_selected]] %>% 
@@ -35,7 +35,7 @@ py_choice_list <-
 py_choices <- py_choice_list[py_choice_list > min(py_choice_list)]
 
 
-# VSD - Supply-Demand ----
+# VSD - Supply-Demand ----------------------------------------------------------
 
 ## Demand by priority dataset. ----
 #### Demand plot data. ----
@@ -100,7 +100,7 @@ build_plot_supply <- function(x, s_scene, d_scene) {
 }
 
 vsd_plot_supply <- 
-  if( !is.null(s_scene_selected)) {
+  if( !is.null(supply[[huc8_selected]]) ) {
     build_plot_supply(supply[[huc8_selected]], 
                       s_scene_selected, d_scene_selected)
   } else {
@@ -108,10 +108,78 @@ vsd_plot_supply <-
   }
 
 #### Combine plot data. ----
+# vsd_plot_data <-
+#   rbind(vsd_plot_demand, 
+#         if(is.data.frame(vsd_plot_supply) & 
+#            mean(names(vsd_plot_supply) == names(vsd_plot_demand)) == 1) vsd_plot_supply)
 vsd_plot_data <-
   rbind(vsd_plot_demand, 
-        if(is.data.frame(vsd_plot_supply) & 
-           mean(names(vsd_plot_supply) == names(vsd_plot_demand)) == 1) vsd_plot_supply)
+        if( is.data.frame(vsd_plot_supply )) vsd_plot_supply)
 
 
-
+### Render plot. ----
+  # Render.
+  ggplot(data = vsd_plot_data,
+         aes(x = plot_date,
+             y = cfs)) +
+    
+    # Demand.
+    geom_area(data = subset(vsd_plot_data, plot_group == "demand"),
+              position = "stack",
+              aes(fill = fill_color)) +
+    
+    # Supply.
+    geom_point(data = subset(vsd_plot_data, plot_group == "supply"),
+               aes(color = s_scenario,
+                   shape = s_scenario),
+               size = 7) +
+    geom_line(data = subset(vsd_plot_data, plot_group == "supply"),
+              aes(color = s_scenario),
+              linetype = "dashed") +
+    
+    # X axis format.
+    scale_x_date(date_labels = "%b %d",
+                 date_minor_breaks = "1 month") +
+    
+    # Y axis format.
+    scale_y_continuous(labels = comma) +
+    
+    # Demand legend.
+    scale_fill_manual(name = "Demand Priority:",
+                      values = wa_demand_pal,
+                      labels = c(paste(priority_selected, 
+                                       "& Junior Post-14 Demand"),
+                                 paste(as.numeric(priority_selected) -1,
+                                       "& Senior Post-14 Demand"),
+                                 "Statement Demand"),
+                      limits = sort(unique(vsd_plot_data$fill_color))) +
+    
+    # Supply legend.
+    scale_shape_manual(name = "Supply Scenario:",
+                       values = wa_supply_shapes) +
+    scale_color_manual(name = "Supply Scenario:",
+                       values = wa_supply_pal) +
+    
+    # Facet on demand scenario.
+    facet_wrap(~ d_scenario, 
+               ncol = 1,
+               scales = "free_x") +
+    
+    # Labels.
+    labs(y = "Cubic Feet per Second (cfs)") +
+    
+    # Theme.
+    theme_minimal() +
+    theme(
+      plot.title = element_text(size = rel(2.0)),
+      strip.text.x = element_text(size = rel(2.0)),
+      axis.title = element_text(size = rel(1.2)),
+      axis.text = element_text(size = rel(1.2)),
+      legend.position = "bottom",
+      legend.text = element_text(size = rel(1.2)),
+      legend.title = element_text(size = rel(1.2)),
+      legend.box = "horizontal",
+      legend.direction = "vertical",
+      panel.spacing = unit(2, "lines"),
+      axis.title.x = element_blank()
+    )

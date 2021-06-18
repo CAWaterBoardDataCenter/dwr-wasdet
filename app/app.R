@@ -278,7 +278,7 @@ ui <- fluidPage( # Start fluidpage_1
                                                            # Plot column.
                                                            column(width = 7,
                                                                   tabsetPanel(id = "plot_tabs",
-                                                                              selected = "Demand by Water Right Type",
+                                                                              selected = "Supply-Demand Scenarios",
                                                                               type = "pills",
                                                                               
                                                                               ###### Demand by Water right type plot tab. ----
@@ -789,7 +789,8 @@ server <- function(input, output, session) {
                                          "& Junior Post-14 Demand"),
                                    paste(as.numeric(input$priority_selected) -1,
                                          "& Senior Post-14 Demand"),
-                                   "Statement Demand")) +
+                                   "Statement Demand"),
+                        limits = sort(unique(vsd_plot_data()$fill_color))) +
       
       # Supply legend.
       scale_shape_manual(name = "Supply Scenario:",
