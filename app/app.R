@@ -178,8 +178,11 @@ ui <- fluidPage( # Start fluidpage_1
   theme = shinytheme("cerulean"),
   
   ## Title bar. ----
-  titlePanel(title = app_title
-             
+  titlePanel(
+    ## Toggle for Production <---
+    # title = app_title
+    title = HTML(paste(app_title,
+                       '<font color=\"#FF0000\">--- DEVELOP ---</font>'))
   ),
   
   ## Main Tabs. ----
@@ -467,7 +470,7 @@ server <- function(input, output, session) {
     updateSelectInput(session,
                       inputId = "huc8_selected",
                       choices = huc8_choices,
-                      selected = "Upper Dry")
+                      selected = sample(huc8_choices, 1))
   })
   
   ## Update demand scenario choices. ----
@@ -479,14 +482,6 @@ server <- function(input, output, session) {
                          selected = "Reported Diversions - 2019")
   })
   
-  # ## Update supply scenario choices. ----
-  # observeEvent(input$huc8_selected, {
-  #   supply_choices <- sort(unique(supply[[input$huc8_selected]]$s_scenario))
-  #   updateSelectizeInput(session,
-  #                        inputId = "s_scene_selected",
-  #                        choices = supply_choices,
-  #                        selected = NULL)
-  # })
   observeEvent(input$huc8_selected, {
     if( !is.null(supply[[input$huc8_selected]]) ) {
         supply_choices <- sort(unique(supply[[input$huc8_selected]]$s_scenario))
@@ -496,11 +491,11 @@ server <- function(input, output, session) {
                            selected = NULL)
     }
   })
-  
-  
+
   ## Update priority year choices. ----
   py_choice_list <- reactive({
-    sort(na.omit(unique(demand[[input$huc8_selected]]$p_year)), decreasing = TRUE)
+    sort(na.omit(unique(demand[[input$huc8_selected]]$p_year)), 
+         decreasing = TRUE)
   })
   observeEvent(input$huc8_selected, {
     choices <- py_choice_list()[py_choice_list() > min(py_choice_list())]
@@ -716,10 +711,6 @@ server <- function(input, output, session) {
   })
   
   #### Supply plot data. ----
-  # vsd_plot_supply <- reactive({
-  #   build_plot_supply(supply[[input$huc8_selected]], 
-  #                     input$s_scene_selected, input$d_scene_selected)
-  # })
   vsd_plot_supply <- reactive({
     if( !is.null(supply[[input$huc8_selected]])) {
       build_plot_supply(supply[[input$huc8_selected]], 
@@ -731,15 +722,6 @@ server <- function(input, output, session) {
   })
   
   #### Combine plot data. ----
-  # vsd_plot_data <- reactive({
-  #   # ifelse(!is.null(vsd_plot_supply()),
-  #   #        rbind(vsd_plot_demand(), vsd_plot_supply()),
-  #   #        vsd_plot_demand())
-  #   
-  #  rbind(vsd_plot_demand(), if(!is.data.frame(vsd_plot_supply())) vsd_plot_supply())
-  #   # filter(rbind(vsd_plot_demand(), if(!is.null(vsd_plot_supply())) vsd_plot_supply()),
-  #   #        !is.na())
-  # })
   vsd_plot_data <- reactive({
     rbind(vsd_plot_demand(), 
           #         if(is.data.frame(vsd_plot_supply()) & mean(names(vsd_plot_supply()) == names(vsd_plot_demand())) == 1) vsd_plot_supply())
