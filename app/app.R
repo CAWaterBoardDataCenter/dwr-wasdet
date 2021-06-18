@@ -234,11 +234,6 @@ ui <- fluidPage( # Start fluidpage_1
                                        
                                        ##### Conditional Inputs. ----
                                        
-                                       #                                      wellPanel(
-                                       
-                                       ###### Conditional supply availability text. ----
-                                       htmlOutput(outputId = "no_supply_text"),
-                                       
                                        ###### Select supply scenario(s) for vsd_plot. ----
                                        selectizeInput(inputId = "s_scene_selected",
                                                       label = "Select Up To Three Supply Scenarios:",
@@ -260,7 +255,9 @@ ui <- fluidPage( # Start fluidpage_1
                                                           label = "Select Water Right Type(s) to Display:",
                                                           choices = NULL,
                                                           selected = NULL),
-                                       #                                      ),
+                                       
+                                       ###### Conditional supply availability text. ----
+                                       htmlOutput(outputId = "no_supply_text"),
                                        
                                        ##### Copyright. ----
                                        HTML('<center><img src="waterboards_logo_high_res.jpg", height = "70px"><img src="DWR-ENF-Logo-2048.png", height = "70px"></center>'),
@@ -323,11 +320,11 @@ ui <- fluidPage( # Start fluidpage_1
                                                                     leafletOutput(outputId = "mini_map",
                                                                                   height = "500px",
                                                                                   width = "95%"),
-                                                                    br() ,
+                                                                    br() #,
                                                                     
-                                                                    ###### Debug notes. ----
-                                                                    h3("Debug"),
-                                                                    uiOutput("debug_text")
+                                                                    # ###### DEBUG NOTES. ----
+                                                                    # h3("Debug"),
+                                                                    # uiOutput("debug_text")
                                                                   )
                                                            )
                                                          )
@@ -418,7 +415,7 @@ server <- function(input, output, session) {
   
   # Disable units selector until implemented
   disable(id = "units_selected")
-
+  
   # Helper Functions. ----
   
   # Define plot height function to keep facet panels roughly the same height
@@ -482,14 +479,24 @@ server <- function(input, output, session) {
                          selected = "Reported Diversions - 2019")
   })
   
-  ## Update supply scenario choices. ----
+  # ## Update supply scenario choices. ----
+  # observeEvent(input$huc8_selected, {
+  #   supply_choices <- sort(unique(supply[[input$huc8_selected]]$s_scenario))
+  #   updateSelectizeInput(session,
+  #                        inputId = "s_scene_selected",
+  #                        choices = supply_choices,
+  #                        selected = NULL)
+  # })
   observeEvent(input$huc8_selected, {
-    supply_choices <- sort(unique(supply[[input$huc8_selected]]$s_scenario))
-    updateSelectizeInput(session,
-                         inputId = "s_scene_selected",
-                         choices = supply_choices,
-                         selected = NULL)
+    if( !is.null(supply[[input$huc8_selected]]) ) {
+        supply_choices <- sort(unique(supply[[input$huc8_selected]]$s_scenario))
+      updateSelectizeInput(session,
+                           inputId = "s_scene_selected",
+                           choices = supply_choices,
+                           selected = NULL)
+    }
   })
+  
   
   ## Update priority year choices. ----
   py_choice_list <- reactive({
@@ -564,7 +571,8 @@ server <- function(input, output, session) {
       
       # Legend.
       scale_fill_manual(name = "Water Right Type:",
-                        values = plot_wrt_pal) +
+                        values = plot_wrt_pal,
+                        limits = sort(unique(wrt_plot_data()$wr_type))) +
       
       # labels
       labs(title = "Monthly Demand by Water Right Type",
@@ -637,7 +645,7 @@ server <- function(input, output, session) {
       scale_fill_manual(name = "Priority:",
                         values = priority_pal,
                         limits = sort(unique(dbp_plot_data()$priority))) +
-  #    guides(fill = guide_legend(ncol = 2)) +
+      #    guides(fill = guide_legend(ncol = 2)) +
       
       
       # labels
@@ -713,7 +721,7 @@ server <- function(input, output, session) {
   #                     input$s_scene_selected, input$d_scene_selected)
   # })
   vsd_plot_supply <- reactive({
-    if( !is.null(input$s_scene_selected)) {
+    if( !is.null(supply[[input$huc8_selected]])) {
       build_plot_supply(supply[[input$huc8_selected]], 
                         input$s_scene_selected, 
                         input$d_scene_selected)
@@ -734,8 +742,8 @@ server <- function(input, output, session) {
   # })
   vsd_plot_data <- reactive({
     rbind(vsd_plot_demand(), 
-  #         if(is.data.frame(vsd_plot_supply()) & mean(names(vsd_plot_supply()) == names(vsd_plot_demand())) == 1) vsd_plot_supply())
-  if(is.data.frame(vsd_plot_supply())) vsd_plot_supply())
+          #         if(is.data.frame(vsd_plot_supply()) & mean(names(vsd_plot_supply()) == names(vsd_plot_demand())) == 1) vsd_plot_supply())
+          if(is.data.frame(vsd_plot_supply())) vsd_plot_supply())
     
   })
   
