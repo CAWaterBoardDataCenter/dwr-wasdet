@@ -180,9 +180,9 @@ ui <- fluidPage( # Start fluidpage_1
   ## Title bar. ----
   titlePanel(
     ## Toggle for Production <---
-    # title = app_title
-    title = HTML(paste(app_title,
-                       '<font color=\"#FF0000\">--- DEVELOP ---</font>'))
+    title = app_title
+    # title = HTML(paste(app_title,
+    #                    '<font color=\"#FF0000\">--- DEVELOP ---</font>'))
   ),
   
   ## Main Tabs. ----
