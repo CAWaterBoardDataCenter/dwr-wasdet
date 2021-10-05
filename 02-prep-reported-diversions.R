@@ -61,7 +61,7 @@ diversions <- diversions_raw %>% clean_names() %>%
          af_monthly = amount,
          everything(),
          -water_right_id) %>% 
-  filter(d_scenario >= 2011 & d_scenario < (project_year - 1))
+  filter(d_scenario >= 2011 & d_scenario < (project_year))
 
 # Recode scenario name to be more descriptive, add plot_category.
 diversions <- diversions %>% 
