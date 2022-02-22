@@ -1,3 +1,5 @@
+library(rmarkdown)
+
 ## Convert FAQ Word Document to HTML FAQ for application.
 
 FAQWord2Html <- function(input_file) {
@@ -6,13 +8,13 @@ FAQWord2Html <- function(input_file) {
   
   old_wd <- getwd()
 
-  setwd(paste0(old_wd, "/docs"))
+  setwd(paste0(old_wd, "/app/docs"))
 
   
-  pandoc_convert(input = "bugs-issues.md",
+  pandoc_convert(input = "DWR-WaSDET-FAQ-v1.5.docx",
                  to = "html",
               #   from = "docx",
-                 output = "bugs-issues.html"
+                 output = "faq.html"
   )
   
   setwd(old_wd)
