@@ -10,28 +10,30 @@ library(aws.s3)
 
 # Initialization. ----
 
+## Switches. ----
+write_data <- FALSE
 download_divs <- FALSE
 save_test_set <- TRUE
-
-## Load S3 keys. ----
-Sys.setenv("AWS_ACCESS_KEY_ID" = scan("s3-keys.txt",
-                                      what = "character",
-                                      quiet = TRUE)[1],
-           "AWS_SECRET_ACCESS_KEY" = scan("s3-keys.txt",
-                                          what = "character",
-                                          quiet = TRUE)[2],
-           "AWS_DEFAULT_REGION" = scan("s3-keys.txt",
-                                       what = "character",
-                                       quiet = TRUE)[3])
-
-# Load functions.
-if(download_divs) source("f_getReportedDivs_FF.R")
 
 # set up parallel R sessions.
 plan(multisession)
 
 # Set project year.
-project_year <- year(now())
+project_year <- 2020
+
+## Load S3 keys. ----
+Sys.setenv("AWS_ACCESS_KEY_ID" = scan("./app/s3-keys.txt",
+                                      what = "character",
+                                      quiet = TRUE)[1],
+           "AWS_SECRET_ACCESS_KEY" = scan("./app/s3-keys.txt",
+                                          what = "character",
+                                          quiet = TRUE)[2],
+           "AWS_DEFAULT_REGION" = scan("./app/s3-keys.txt",
+                                       what = "character",
+                                       quiet = TRUE)[3])
+
+# Load functions.
+if(download_divs) source("f_getReportedDivs_FF.R")
 
 # Define variables.
 
@@ -61,9 +63,9 @@ diversions <- diversions_raw %>% clean_names() %>%
          af_monthly = amount,
          everything(),
          -water_right_id) %>% 
-  filter(d_scenario >= 2011 & d_scenario < (project_year))
+  filter(d_scenario >= 2011 & d_scenario <= (project_year))
 
-# Recode scenario name to be more descriptive, add plot_category.
+# Re-code scenario name to be more descriptive, add plot_category.
 diversions <- diversions %>% 
   mutate(d_scenario = paste0("Reported Diversions - ", d_scenario),
          plot_category = "demand")
@@ -156,22 +158,26 @@ plan(sequential)
 
 ## Save data files locally and to S3 bucket. ----
 
-# Save to S3 for Shiny app to pick up.
+# Set data create date.
 demand_create_date <- Sys.Date()
-outfile_loc <- "./output/wasdet-demands.RData"
-save(demand,
-     demand_create_date,
-     file = outfile_loc)
-put_object(file = outfile_loc,
-           object = "wasdet-demands.RData",
-           bucket = "dwr-shiny-apps",
-           multipart = TRUE)
+
+# Save to S3 for Shiny app to pick up.
+if(write_data) {
+  outfile_loc <- "./output/wasdet-demands.RData"
+  save(demand,
+       demand_create_date,
+       file = outfile_loc)
+  put_object(file = outfile_loc,
+             object = "wasdet-demands.RData",
+             bucket = "dwr-shiny-apps",
+             multipart = TRUE)
+}
 
 if (save_test_set) {
   # Save demand test set for shorter load times.
-  demand <- demand[grepl("Upper", names(demand))]
+  demand_test_set <- demand[grepl("Upper", names(demand))]
   test_data_loc <- "./output/wasdet-demands-test-set.RData"
-  save(demand,
+  save(demand_test_set,
        demand_create_date,
        file = test_data_loc)
   put_object(file = test_data_loc,

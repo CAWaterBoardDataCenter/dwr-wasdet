@@ -32,6 +32,7 @@ if(!("package:aws.s3" %in% search())) {
 # Initialization. ----
 
 ## Switches. ----
+write_data <- FALSE
 download_new_wrinfo <- TRUE
 download_new_pods <- TRUE
 save_data_gaps <- TRUE
@@ -152,7 +153,6 @@ load(f_name)
 # Clean column names, remove duplicate records and empty columns.
 wr_info <- wr_info_raw %>%
   clean_names(.) %>%
-  remove_empty("cols") %>% 
   distinct() %>% 
   filter(!is.na(application_number))
 
@@ -218,6 +218,7 @@ wr_info <- wr_info %>%
   bind_rows() %>% 
   arrange(wr_id)
 
+
 ## Load and process POD shapefile. ----
 
 # Download latest version of POD geodatabase if switch is on.
@@ -239,7 +240,7 @@ if(download_new_pods) {
 gdb_files <- file.info(list.files("./gis", full.names = T))
 dsn <- rownames(gdb_files)[which.max(gdb_files$mtime)]
 pods_raw <- read_sf(dsn = dsn,
-                        layer = st_layers(dsn)[[1]][[1]]) # rewrite with regex capture layer name
+                    layer = st_layers(dsn)[[1]][[1]]) # rewrite with regex capture layer name
 # plot(st_geometry(pods_raw)) # Should look like CA.
 
 # Fix Water right ID mismatches.
@@ -325,7 +326,7 @@ pods<- pods %>%
                          suppressWarnings(as.numeric(priority)),
                          NA)) %>% 
   relocate(p_year, .after = priority)
- 
+
 # Reproject points to st_crs("+proj=longlat +datum=WGS84 +no_defs") (4326).
 # This is the projection leaflet likes.
 pods <- st_transform(pods, 4326)
@@ -334,9 +335,9 @@ pods <- st_transform(pods, 4326)
 dsn <- "./app/common/CA_HUC-8_Watersheds"
 layer <- "CA_HUC-8_Watersheds"
 huc8_layer <- read_sf(dsn = dsn,
-                         layer = layer)
+                      layer = layer)
 huc8_layer <- st_transform(huc8_layer,
-                              crs = 4326)
+                           crs = 4326)
 
 huc8_layer <- huc8_layer %>% 
   select(huc8_name = name,
@@ -344,15 +345,19 @@ huc8_layer <- huc8_layer %>%
 
 ## Save data files locally and to S3 bucket. ----
 
-# Save to S3 for Shiny app to pick up.
-wrinfo_create_date <- Sys.Date()
-save(wr_info, 
-     pods,
-     huc8_layer,
-     wr_type_list,
-     wrinfo_create_date,
-     file = "./output/wasdet-wrinfo.RData")
-put_object(file = "./output/wasdet-wrinfo.RData", 
-           object = "wasdet-wrinfo.RData", 
-           bucket = "dwr-shiny-apps",
-           multipart = TRUE)
+if(write_data) {
+  # Save data locally.
+  wrinfo_create_date <- Sys.Date()
+  save(wr_info, 
+       pods,
+       huc8_layer,
+       wr_type_list,
+       wrinfo_create_date,
+       file = "./output/wasdet-wrinfo.RData")
+  
+  # Write data to S3 bucket.
+  put_object(file = "./output/wasdet-wrinfo.RData", 
+             object = "wasdet-wrinfo.RData", 
+             bucket = "dwr-shiny-apps",
+             multipart = TRUE)
+}

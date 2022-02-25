@@ -45,7 +45,7 @@ getReporteDivsCSV <- function(cred_file = "credentials.csv",
         browser.tabs.remote.autostart.2 = FALSE,
         browser.tabs.remote.desktopbehavior = FALSE))
     
-    driver <- rsDriver(port = 4567L, # free_port(), 
+    driver <- rsDriver(port = free_port(), 
                    browser = "firefox", 
                    version = "latest", 
                    # geckover = "0.14.0", 
@@ -79,7 +79,7 @@ getReporteDivsCSV <- function(cred_file = "credentials.csv",
     # Download the data file.
     download <- remDr$findElement("xpath", '//input[@type="submit"]')
     download$clickElement()
-    Sys.sleep(240)
+    Sys.sleep(300)
     
     # Close connection to Selenium server.
     remDr$close()
