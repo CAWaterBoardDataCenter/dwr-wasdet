@@ -23,9 +23,7 @@ The Reported Diversion datasets contain the monthly amounts diverted as reported
 | Reported Diversions - 2011 | 2011           | All                  | Unavailable                       | eWRIMS      |
 | Reported Diversions - 2010 | 2010           | All                  | Unavailable                       | eWRIMS      |
 | Reported Diversions - 2009 | 2009           | All                  | Unavailable                       | eWRIMS      |
-
-
-
+  
 The Overall Reporting Compliance Rate values indicate the statewide percentage of water rights or claims of right for which annual diversion and use reports have been submitted for each reporting year. A higher Overall Reporting Compliance Rate generally indicates a more complete dataset.  
 
 ### Estimated Demands  
