@@ -5,7 +5,6 @@ The demand datasets provided in the tool fall under two categories: 1) Reported 
 ### Reported Diversions  
 
 The Reported Diversion datasets contain the monthly amounts diverted as reported by diverters or their agents on their annual diversion and use reports submitted for each water right or claim of right. The following table summarizes the available Reported Diversion Demand Scenarios.  
-  
 
 : Available Reported Diversion Demand Scenarios  
 
@@ -22,8 +21,9 @@ The Reported Diversion datasets contain the monthly amounts diverted as reported
 | Reported Diversions - 2012 | 2012           | All                  | 49%                               | eWRIMS      |
 | Reported Diversions - 2011 | 2011           | All                  | Unavailable                       | eWRIMS      |
 | Reported Diversions - 2010 | 2010           | All                  | Unavailable                       | eWRIMS      |
-| Reported Diversions - 2009 | 2009           | All                  | Unavailable                       | eWRIMS      |
+| Reported Diversions - 2009 | 2009           | All                  | Unavailable                       | eWRIMS      |  
   
+
 The Overall Reporting Compliance Rate values indicate the statewide percentage of water rights or claims of right for which annual diversion and use reports have been submitted for each reporting year. A higher Overall Reporting Compliance Rate generally indicates a more complete dataset.  
 
 ### Estimated Demands  
