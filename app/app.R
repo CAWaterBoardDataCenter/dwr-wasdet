@@ -486,7 +486,7 @@ server <- function(input, output, session) {
     updateSelectizeInput(session, 
                          inputId = "d_scene_selected",
                          choices = choices,
-                         selected = "Reported Diversions - 2019")
+                         selected = "Reported Diversions - 2020")
   })
   
   observeEvent(input$huc8_selected, {
