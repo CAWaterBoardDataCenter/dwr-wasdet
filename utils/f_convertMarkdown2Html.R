@@ -14,3 +14,5 @@
   
   setwd(old_wd)
  
+## NOTE:
+## Manually add <p></p> at the end of table in resulting HTML file.
