@@ -31,7 +31,7 @@ if(!("package:aws.s3" %in% search())) {
 
 # Initialization. ----
 
-plot_year <- year(Sys.Date())
+plot_year <- 2020
 
 ## Load S3 keys. ----
 source("load-s3-keys.R")

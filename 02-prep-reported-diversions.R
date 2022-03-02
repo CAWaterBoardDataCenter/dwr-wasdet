@@ -18,26 +18,18 @@ save_test_set <- TRUE
 # set up parallel R sessions.
 plan(multisession)
 
-# Set project year.
-project_year <- 2020
+# Set plot year.
+plot_year <- 2020
 
 ## Load S3 keys. ----
-Sys.setenv("AWS_ACCESS_KEY_ID" = scan("./app/s3-keys.txt",
-                                      what = "character",
-                                      quiet = TRUE)[1],
-           "AWS_SECRET_ACCESS_KEY" = scan("./app/s3-keys.txt",
-                                          what = "character",
-                                          quiet = TRUE)[2],
-           "AWS_DEFAULT_REGION" = scan("./app/s3-keys.txt",
-                                       what = "character",
-                                       quiet = TRUE)[3])
+source("./app/load-s3-keys.R")
 
 # Load functions.
 if(download_divs) source("f_getReportedDivs_FF.R")
 
 # Define variables.
 
-priority_order <- c(c(project_year:1914),  
+priority_order <- c(c(plot_year:1914),  
                     "Statement Demand", 
                     "Environmental Demand")
 
@@ -63,7 +55,7 @@ diversions <- diversions_raw %>% clean_names() %>%
          af_monthly = amount,
          everything(),
          -water_right_id) %>% 
-  filter(d_scenario >= 2011 & d_scenario <= (project_year))
+  filter(d_scenario >= 2011 & d_scenario <= (plot_year))
 
 # Re-code scenario name to be more descriptive, add plot_category.
 diversions <- diversions %>% 
@@ -107,12 +99,12 @@ demand <- future_map(.x = demand,
                      .progress = TRUE)
 
 ## Demands are AF/month. Plots will be on a daily time step. Calculate 
-## month-averaged daily AF and cfs. Map to date time series with project_year.
+## month-averaged daily AF and cfs. Map to date time series with plot_year.
 
 # Create vector containing series of dates for project year.
-dates_to_map <- tibble(plot_date = seq(as.Date(paste0(project_year, 
+dates_to_map <- tibble(plot_date = seq(as.Date(paste0(plot_year, 
                                                       "-01-01")),
-                                       as.Date(paste0(project_year, 
+                                       as.Date(paste0(plot_year, 
                                                       "-12-31")),
                                        by = "month"),
                        rept_month = as.numeric(month(plot_date)))
