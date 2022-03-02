@@ -1,19 +1,16 @@
-## Convert Word Document to markdown for application.
+## Convert Markdown to HTML.
 
-convertMarkown2Html <- function(input_file) {
-  
   library(rmarkdown)
   
   old_wd <- getwd()
 
-  setwd(paste0(old_wd, "/docs"))
+  setwd("~/R/GitHub/work/dwr-wasdet/app/docs")
 
   
-  pandoc_convert(input = input_file,
+  pandoc_convert(input = "demand-scenarios.md",
                  to = "html",
                  output = "demand-scenarios.html"
   )
   
   setwd(old_wd)
  
-}

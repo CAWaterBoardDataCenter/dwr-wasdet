@@ -104,11 +104,13 @@ s3load(object = "wasdet-wrinfo.RData",
 
 ## Load Demand Data. ----
 ## Load smaller test set if on local machine for testing.
-if (Sys.info()["nodename"] == "Home-iMac.local") {
-  s3load(object = "wasdet-demands-test-set.RData", bucket = "dwr-shiny-apps")
-} else {
+ if (Sys.info()["nodename"] == "Home-iMac.local") {
+   s3load(object = "wasdet-demands-test-set.RData", bucket = "dwr-shiny-apps")
+   demand <- demand_test_set
+   rm(demand_test_set)
+ } else {
   s3load(object = "wasdet-demands.RData", bucket = "dwr-shiny-apps")
-}
+ }
 
 ## Load Supply data. ----
 s3load(object = "wasdet-supplies.RData",
@@ -354,14 +356,19 @@ ui <- fluidPage( # Start fluidpage_1
              ### Dataset Information. ----
              navbarMenu("Dataset Information",
                         icon = icon("table"),
+                        
+                        #### Demand Scenarios. ----
                         tabPanel("Demand Scenarios",
                                  icon = icon("faucet"),
-                                 includeHTML("docs/demand-scenarios.html")),
+                                 includeHTML("./docs/demand-scenarios.html")),
                         
+                        #### Supply Scenarios. ----
                         tabPanel("Supply Scenarios",
                                  icon = icon("water"),
                                  "Supply Scenarios", br(),
                                  "Content Goes Here"),
+                        
+                        #### Other Data. ----
                         tabPanel("Other Data",
                                  icon = icon("table"),
                                  "Other Data", br(),
