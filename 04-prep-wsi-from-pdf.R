@@ -1,6 +1,12 @@
 ## Load library packages----
-if(!("package:tidyverse" %in% search())) {
-  suppressMessages(library(tidyverse))
+if(!("package:tidyr" %in% search())) {
+  suppressMessages(library(tidyr))
+}
+if(!("package:dplyr" %in% search())) {
+  suppressMessages(library(dplyr))
+}
+if(!("package:readr" %in% search())) {
+  suppressMessages(library(readr))
 }
 if(!("package:readxl" %in% search())) {
   suppressMessages(library(readxl))
@@ -14,20 +20,21 @@ wsi_months <- month.abb[c(10:12, 1:9)]
 
 
 # set required filepaths----
-srwsi_file <- "./supply-data/srwsi/SRWSI_Summary_20210401.csv"
+srwsi_file <- "./supply-data/srwsi/SRWSI_Summary_20220301.xlsx"
 SJWSI_file <- "./supply-data/sjwsi/SJWSI-20220201.csv"
 station_file <- "./supply-data/wsi-huc8-station-id-lookup.csv"
 
 # Load stations.
 stations <- read_csv(station_file)
 
-srwsi_raw <- read_csv(srwsi_file,
-                      n_max = 45)[1:13]
+srwsi_raw <- read_xlsx(srwsi_file,
+                       skip = 3,
+                      n_max = 42)[1:13]
 names(srwsi_raw) <- c("exceedance", wsi_months)
 
 srwsi <- srwsi_raw %>% 
-  filter(!row_number() %in% 1) %>% 
   drop_na(exceedance) %>% 
+  filter(exceedance > 0.0) %>% 
   bind_cols(description = c(rep("Shasta Lake Unimpaired Inflow", 6),
                  rep("Sacramento River above Bend Bridge Unimpaired Flow", 6),
                  rep("Feather River at Oroville Unimpaired Flow", 6),
