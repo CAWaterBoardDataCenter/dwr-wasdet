@@ -1,12 +1,6 @@
 ## Load library packages----
-if(!("package:tidyr" %in% search())) {
-  suppressMessages(library(tidyr))
-}
-if(!("package:dplyr" %in% search())) {
-  suppressMessages(library(dplyr))
-}
-if(!("package:readr" %in% search())) {
-  suppressMessages(library(readr))
+if(!("package:tidyverse" %in% search())) {
+  suppressMessages(library(tidyverse))
 }
 if(!("package:readxl" %in% search())) {
   suppressMessages(library(readxl))
@@ -15,43 +9,10 @@ if(!("package:lubridate" %in% search())) {
   suppressMessages(library(lubridate))
 }
 
-wsi_months <- month.abb[c(10:12, 1:9)]
-
-
-
 # set required filepaths----
-srwsi_file <- "./supply-data/srwsi/SRWSI_Summary_20220301.xlsx"
-SJWSI_file <- "./supply-data/sjwsi/SJWSI-20220201.csv"
+SJWSI_file <- "./supply-data/sjwsi/SJWSI_Summary_20210301.csv"
+SRWSI_file <- "./supply-data/srwsi/SRWSI_Summary_20210301.csv"
 station_file <- "./supply-data/wsi-huc8-station-id-lookup.csv"
-
-# Load stations.
-stations <- read_csv(station_file)
-
-srwsi_raw <- read_xlsx(srwsi_file,
-                       skip = 3,
-                      n_max = 42)[1:13]
-names(srwsi_raw) <- c("exceedance", wsi_months)
-
-srwsi <- srwsi_raw %>% 
-  drop_na(exceedance) %>% 
-  filter(exceedance > 0.0) %>% 
-  bind_cols(description = c(rep("Shasta Lake Unimpaired Inflow", 6),
-                 rep("Sacramento River above Bend Bridge Unimpaired Flow", 6),
-                 rep("Feather River at Oroville Unimpaired Flow", 6),
-                 rep("Yuba River near Smartville plus Deer Creek Unimpaired Flow", 6),
-                 rep("American River below Folsom Lake Unimpaired Flow", 6)),
-            )
-                  
-
-
-
-sjwsi_raw <- read_csv(sjwsi_file)
-
-
-
-
-
-
 
 # import wsi file dates and station data----
 sjwsi_datetime <- mdy(read_csv(SJWSI_file,
@@ -107,7 +68,7 @@ wsi_extract <- function(station_df) {
 }
 
 # for loop to extract data over station dataframe----
-#i = 1
+i = 1
 for (i in 1:length(station_df[[1]])) {
   temp_extract <- wsi_extract(station_df)
   if(exists("wsi_extracted")){
@@ -115,10 +76,10 @@ for (i in 1:length(station_df[[1]])) {
   } else {
     wsi_extracted <- temp_extract
   }
-# i = i + 1
+  i = i + 1
 }
 output_filename = paste0("b120-wsi-", 
-              as.numeric(format(as.Date(sjwsi_datetime), '%Y%m%d')),
+              format(as.Date(sjwsi_datetime), '%Y%m%d'),
               ".csv")
 write_csv(wsi_extracted,
           paste0("./supply-data/wsi/",

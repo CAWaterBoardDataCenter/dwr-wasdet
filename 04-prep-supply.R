@@ -134,7 +134,7 @@ supply_hist_annual <- supply_hist_annual %>%
 # then save munged data in TBD project folder. Currently using hand-built
 # source csv file while dashboard is in development.
 
-supply_forecast_wsi_raw <- read_csv("./supply-data/wsi/b120-wsi-20210201.csv")
+supply_forecast_wsi_raw <- read_csv("./supply-data/wsi/b120-wsi-20220103.csv")
 
 # Build plot_date.
 supply_forecast_wsi <- supply_forecast_wsi_raw %>% 
@@ -230,8 +230,8 @@ supply <- map(.x = supply,
 # Save data files locally and to S3 bucket. ----
 
 # Save locally and to to S3 for dashboard to pick up.
-supply_create_date <- Sys.Date()
-outfile_loc <- "./output/wasdet-supplies.RData"
+outfile_loc <- paste0("./output/wasdet-supplies-", 
+                      format(Sys.Date(), "%Y%m%d"), ".RData")
 save(supply,
      supply_create_date,
      file = outfile_loc)
